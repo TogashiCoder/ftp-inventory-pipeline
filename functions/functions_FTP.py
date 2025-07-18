@@ -1,0 +1,133 @@
+import os
+
+from utils import *
+from ftplib import FTP
+from dotenv import dotenv_values
+from config.logging_config import logger
+from config.config_path_variables import *
+from functions.functions_check_ready_files import *
+
+# ------------------------------------------------------------------------------
+#                           FTP Configuration
+# ------------------------------------------------------------------------------
+def create_ftp_config(keys):
+    """
+    keys: ["FOURNISSEUR_A", "FOURNISSEUR_B", ...]     # Same Same for Platforms
+
+    return:  {'FOURNISSEUR_A': {'host': 'ftp.fournisseur-a.com', 'user': 'user_a', 'password': 'pass_a'}, 
+              'FOURNISSEUR_B': {'host': 'ftp.fournisseur-b.com', 'user': 'user_b', 'password': 'pass_b'}, 
+              ...}                       
+    """
+    config = {}
+    for key in keys:
+        host = os.getenv(f"FTP_HOST_{key}")
+        user = os.getenv(f"FTP_USER_{key}")
+        password = os.getenv(f"FTP_PASSWORD_{key}")
+
+        if not all([host, user, password]):     # Assurez que .env est bien rempli
+            logger.error(f'-- ❌ --  FTP config missing for {key}')
+            raise ValueError(f"FTP config missing for {key}")
+
+        config[key] = {
+            "host": host,
+            "user": user,
+            "password": password
+        }
+
+    return config
+
+
+# ------------------------------------------------------------------------------
+#                           Download File via FTP
+# ------------------------------------------------------------------------------
+def download_file_from_ftp(ftp, remote_file, local_file):
+    """
+    Charger le fichier du serveur FTP ==> puis créer une copie localement
+    """
+    try:
+        with open(local_file, "wb") as local_f:
+            ftp.retrbinary("RETR " + remote_file, local_f.write)
+        logger.info(f" -- ✅ --  Téléchargement terminé : {remote_file}")
+        return True
+
+    except Exception as e:
+        logger.error(f"-- ❌ --  Error de téléchargement: {remote_file}: {e}")
+        return False
+    
+
+# ------------------------------------------------------------------------------
+#                 Fonction pour télécharger tous les fichiers FTP
+# ------------------------------------------------------------------------------
+def download_files_from_all_servers(ftp_servers, output_dir):    
+    '''
+    Args: 
+        ftp_servers:
+            {'FOURNISSEUR_A': {'host': 'ftp.fournisseur-a.com', 'user': 'user_a', 'password': 'pass_a'}, 
+              'FOURNISSEUR_B': {'host': 'ftp.fournisseur-b.com', 'user': 'user_b', 'password': 'pass_b'}, 
+              ...}
+              & Same same for Platforms
+
+        output_dir: fichiers_fournisseurs ou fichiers_platforms
+    return: 
+        list_fichiers ==> dict('FOURNISSEUR_A': chemin fichierA , 
+                               'FOURNISSEUR_B': chemin fichierB,... )
+
+    '''
+    
+    os.makedirs(output_dir, exist_ok=True)
+
+    downloaded_files = {}
+
+    for name, config in ftp_servers.items():      # sachant que: create_ftp_config <==> FTP_SERVERS_FOURNISSEURS = {"FOURNISSEUR_A": {"host": "ftp_host_FOURNISSEUR_A", "user": os.getenv("FTP_USER_FOURNISSEUR_A"), "password": os.getenv("FTP_PASS_FOURNISSEUR_A")},...}
+        try:
+            ftp = FTP(config["host"])
+            ftp.login(config["user"], config["password"])
+            logger.info(f"-- ✅ --  Bien connecté à l'FTP de {name}")
+
+            filenames = ftp.nlst()       # pour récupérer la liste des fichiers et répertoires dans le répertoire courant du serveur FTP
+            ftp_file = next((f for f in filenames if f.endswith(('.csv', '.xls', '.xlsx', '.txt'))), None)    # retourn le premier fichier de ces extension
+
+            if ftp_file:
+                extension = os.path.splitext(ftp_file)[1]  # exemple : '.csv'
+                local_path = os.path.join(output_dir, f"{name}-{extension}")
+                success = download_file_from_ftp(ftp, ftp_file, local_path)
+                if success:
+                    downloaded_files[name] = local_path 
+                logger.info(f" -- ✅ --  Téléchargement terminé pour {name}: {ftp_file} → {local_path}")
+
+            else:
+                logger.exception(f"-- ⚠️ --  Aucun fichier valide trouvé pour {name}")
+
+            ftp.quit()
+
+        except Exception as e:
+            logger.error(f"-- ❌ --  Erreur connexion FTP pour {name} : {e}")
+
+    return downloaded_files
+
+
+
+# ------------------------------------------------------------------------------
+#       Load all/few Fournisseurs/ platforms existed in env file             
+# ------------------------------------------------------------------------------
+def get_all_fournisseurs_env(path_env=ENV_PATH):
+    data_env = get_info_ftp_env(path_env=path_env)          # return: {'FOURNISSEUR_A': {'host': '...',...}, 'PLATFORM_A': {'host': '...',}}
+    list_all_fournisseurs_env, _ = separer_fournisseurs_et_plateformes(data_env)        #  ['FOURNISSEUR_A', 'FOURNISSEUR_B', ...]  ,   ['PLATFORM_A', ...]
+    return list_all_fournisseurs_env
+
+def get_all_platforms_env(path_env=ENV_PATH):
+    data_env = get_info_ftp_env(path_env=path_env)  
+    _, list_all_platforms_env = separer_fournisseurs_et_plateformes(data_env)
+    return list_all_platforms_env
+
+def load_fournisseurs_ftp(list_fournisseurs):
+    f_data_ftp = create_ftp_config(list_fournisseurs)
+    downloaded_files_F = download_files_from_all_servers(f_data_ftp, DOSSIER_FOURNISSEURS)   # output_dir: fichiers_fournisseurs 
+    return downloaded_files_F       #  dict('FOURNISSEUR_A': chemin fichierA , 
+                                    #       'FOURNISSEUR_B': chemin fichierB,... )
+
+def load_platforms_ftp(list_platforms):
+    p_data_ftp = create_ftp_config(list_platforms)
+    downloaded_files_P = download_files_from_all_servers(p_data_ftp, DOSSIER_PLATFORMS)   # output_dir: fichiers_platforms
+    return downloaded_files_P
+

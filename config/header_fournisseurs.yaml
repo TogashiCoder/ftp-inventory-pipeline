@@ -1,0 +1,44 @@
+FOURNISSEUR_A:   # pricing_stock.xlsx   name :AS-PL FOURNISSEUR
+  nom_reference: "name"
+  quantite_stock: "on_depot"
+
+FOURNISSEUR_B:   # stocklist.xls   name :Abakus FOURNISSEUR
+  nom_reference: "(1) KTM"
+  quantite_stock: "(2) Main Warehouse"
+
+FOURNISSEUR_C:   # AJS-OFERTA-009659-DE.csv  name :NTY FOURNISSEUR
+  nom_reference: "Codes de produits"
+  quantite_stock: "Quantites"
+
+FOURNISSEUR_D:   # export (66).csv    name :export() FOURNISSEUR
+  nom_reference: "SKU"
+  quantite_stock: "Stock"
+
+FOURNISSEUR_E:   # Airstal.csv   name :Airstal FOURNISSEUR
+  nom_reference: "Part Number"
+  quantite_stock: "Quantity Available"
+
+FOURNISSEUR_F:   # skv.xlsx           not have header 
+  nom_reference: 0
+  quantite_stock: 2
+
+FOURNISSEUR_G:   # Stock.txt    name:JPGROUP FOURNISSEUR
+  nom_reference: "ITEMID"
+  quantite_stock: "Viborg"
+
+
+# ----------- tODAY
+
+FOURNISSEUR_H:   # 1210021_SBShop-Artikelstamm-Gekürzt_1747871859797.csv
+  nom_reference: "Article number"
+  quantite_stock: "Supplier stock"
+
+
+FOURNISSEUR_I:   # rad_01.csv   name:STORM FOURNISSEUR
+  nom_reference: 1
+  quantite_stock: 2
+
+FOURNISSEUR_J:   # rad_02.csv  name:STORM FOURNISSEUR
+  nom_reference: 1
+  quantite_stock: 2
+  

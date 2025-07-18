@@ -1,0 +1,13 @@
+pandas
+numpy
+python-dotenv
+dotenv 
+openpyxl
+pyyaml
+customtkinter
+xlrd
+chardet
+charset_normalizer
+pillow
+pyinstaller
+pytest

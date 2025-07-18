@@ -1,6 +1,7 @@
 import os
 import warnings
 from pathlib import Path
+import time
 
 from utils import *
 from functions.functions_FTP import * 
@@ -232,17 +233,13 @@ def cumule_fournisseurs(data_fournisseurs):
 
 
 def mettre_a_jour_Stock(valide_fichiers_platforms, valide_fichiers_fournisseurs):
-    
     logger.info('--------------------- Mettre A Jour le Stock -------------------')
     if len(valide_fichiers_platforms) > 0 and len(valide_fichiers_fournisseurs)> 0:
-    
         try: 
             data_fournisseurs = read_all_fournisseurs(valide_fichiers_fournisseurs)
-                #print('$$$$$ data_fournisseurs', data_fournisseurs)
             logger.info('----------- Calcule de cumule ------------------')
             data_fournisseurs_cumule = cumule_fournisseurs(data_fournisseurs)
 
-                
             for name_p, data_p in valide_fichiers_platforms.items():
                 chemin_fichier_p = data_p['chemin_fichier']
                 nom_reference_p = data_p[YAML_REFERENCE_NAME]
@@ -259,23 +256,20 @@ def mettre_a_jour_Stock(valide_fichiers_platforms, valide_fichiers_fournisseurs)
                 df_updated = update_plateforme(reduced_data_p, data_fournisseurs_cumule, name_p, 'cumule')
                 reduced_data_p = df_updated    # df_p = df_updated.copy()
                 
-                # d_update = dict(zip(df_origin_platform[ID_PRODUCT], df_origin_platform[QUANTITY]))
                 map_quantites = dict(zip(reduced_data_p[ID_PRODUCT], reduced_data_p[QUANTITY]))
-            
-                # Appliquer la mise à jour des quantités dans le fichier cible
                 df_p[quantite_stock_p] = df_p[nom_reference_p].map(map_quantites).fillna(df_p[quantite_stock_p])
 
-            
-                os.makedirs(UPDATED_FILES_PATH, exist_ok=True)
-            
-                # save_file(df_origin_platform, file_name=f'UPDATED_FILES/{path_p}')
-                save_file(file_name=f'{UPDATED_FILES_PATH_RACINE}/{Path(chemin_fichier_p).name}', df=df_p,  encoding=encoding_p, sep=sep_p)
-                
-                logger.info(f"-- -- ✅ -- --  Mise à jour effectuée : {name_p}")
+                # --- New save logic ---
+                platform_dir = UPDATED_FILES_PATH / name_p
+                platform_dir.mkdir(parents=True, exist_ok=True)
+                timestamp = time.strftime('%Y%m%d-%H%M%S')
+                latest_file = platform_dir / f"{name_p}-latest.csv"
+                archive_file = platform_dir / f"{name_p}-{timestamp}.csv"
+                save_file(str(latest_file), df_p, encoding=encoding_p, sep=sep_p)
+                save_file(str(archive_file), df_p, encoding=encoding_p, sep=sep_p)
+                logger.info(f"-- -- ✅ -- --  Mise à jour effectuée et fichiers sauvegardés pour : {name_p}")
             logger.info('---------------------------------------------------------------')
-        
             logger.info('================================================================')
-        
             return True
         except Exception as e:
             logger.error(f"-- -- ❌ -- --  Mise à jour n'est pas effectuée: {e}")

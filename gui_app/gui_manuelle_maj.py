@@ -406,7 +406,7 @@ class MajManuelleFrame(ctk.CTkFrame):
             if is_store_updated:
 
                 logger.info('-- -- ✅ -- --  Mise à jour effectuée -- -- ✅ -- -- ')
-                upload_updated_files_to_marketplace()
+                upload_updated_files_to_marketplace(dry_run=False)
                 messagebox.showinfo("Succès", "✅ La mise à jour a été effectuée avec succès.\nFiles have been uploaded to marketplaces FTP.")
                  
                 # Supprimer ancien bouton s'il existe

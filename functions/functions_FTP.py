@@ -135,45 +135,62 @@ def load_platforms_ftp(list_platforms):
 # ------------------------------------------------------------------------------
 #         Upload updated marketplace files to their respective FTP servers
 # ------------------------------------------------------------------------------
-def upload_updated_files_to_marketplace():
+def find_latest_file_for_platform(platform_dir, platform_name):
     """
-    Uploads all files in UPDATED_FILES/fichiers_platforms to their respective marketplace FTP servers.
-    Credentials are loaded from .env using the pattern FTP_HOST_<PLATFORM>, etc.
-    Logs success and failure for each upload. Retries up to 3 times on failure.
+    Helper to find the latest file for a platform. Prefer <PLATFORM_NAME>-latest.csv, else pick the most recent timestamped file.
+    """
+    import glob
+    import os
+    from pathlib import Path
+    latest_file = platform_dir / f"{platform_name}-latest.csv"
+    if latest_file.exists():
+        return latest_file
+    # Fallback: find most recent timestamped file
+    files = list(platform_dir.glob(f"{platform_name}-*.csv"))
+    files = [f for f in files if '-latest' not in f.name]
+    if files:
+        return max(files, key=lambda f: f.stat().st_mtime)
+    return None
+
+
+def upload_updated_files_to_marketplace(dry_run=False):
+    """
+    Uploads the <PLATFORM_NAME>-latest.csv file for each platform in UPDATED_FILES/fichiers_platforms/<PLATFORM_NAME>/ to its FTP server.
+    If dry_run is True, only log actions without uploading.
     """
     import time
     from ftplib import error_perm
-    from glob import glob
     from dotenv import load_dotenv
-
-    # Ensure .env is loaded
     load_dotenv()
 
-    upload_dir = UPDATED_FILES_PATH
-    if not upload_dir.exists() or not upload_dir.is_dir():
-        logger.error(f"[ERROR]: Upload directory {upload_dir} does not exist or is not a directory.")
+    upload_root = UPDATED_FILES_PATH
+    if not upload_root.exists() or not upload_root.is_dir():
+        logger.error(f"[ERROR]: Upload directory {upload_root} does not exist or is not a directory.")
         return
 
-    files = list(upload_dir.glob("*.csv")) + list(upload_dir.glob("*.xls")) + list(upload_dir.glob("*.xlsx")) + list(upload_dir.glob("*.txt"))
-    if not files:
-        logger.warning(f"[WARNING]: No updated files found in {upload_dir} to upload.")
-        return
-
-    for file_path in files:
-        # Extract platform name from file name (e.g., PLATFORM_A-.csv or PLATFORM_A-xxx.csv)
-        platform_name = file_path.name.split("-")[0]
+    for platform_dir in upload_root.iterdir():
+        if not platform_dir.is_dir():
+            continue
+        platform_name = platform_dir.name
+        file_path = find_latest_file_for_platform(platform_dir, platform_name)
+        if not file_path or not file_path.exists():
+            logger.warning(f"[WARNING]: No latest file found for {platform_name} in {platform_dir}. Skipping upload.")
+            continue
         host = os.getenv(f"FTP_HOST_{platform_name}")
         user = os.getenv(f"FTP_USER_{platform_name}")
         password = os.getenv(f"FTP_PASSWORD_{platform_name}")
         if not all([host, user, password]):
             logger.error(f"[ERROR]: FTP credentials missing for {platform_name}. Skipping upload for {file_path.name}.")
             continue
-
+        logger.info(f"[INFO]: Preparing to upload {file_path.name} for {platform_name} to FTP.")
+        if dry_run:
+            logger.info(f"[DRY RUN]: Would upload {file_path} to FTP for {platform_name}.")
+            continue
         success = False
         for attempt in range(1, 4):  # 3 retries
             try:
-                with FTP(host) as ftp:
-                    ftp.login(user, password)
+                with FTP(host) as ftp:  # type: ignore
+                    ftp.login(user, password)  # type: ignore
                     logger.info(f"[INFO]: Connected to FTP for {platform_name} (attempt {attempt}).")
                     with open(file_path, "rb") as f:
                         ftp.storbinary(f"STOR {file_path.name}", f)
@@ -183,6 +200,6 @@ def upload_updated_files_to_marketplace():
             except Exception as e:
                 logger.error(f"[ERROR]: Failed to upload file {file_path.name} to FTP for {platform_name} (attempt {attempt}): {e}")
                 time.sleep(2)  # Wait before retry
-        if not success:
+        if not success and not dry_run:
             logger.error(f"[ERROR]: Failed to upload file {file_path.name} to FTP for {platform_name} after 3 attempts.")
 

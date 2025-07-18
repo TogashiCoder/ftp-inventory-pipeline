@@ -131,3 +131,58 @@ def load_platforms_ftp(list_platforms):
     downloaded_files_P = download_files_from_all_servers(p_data_ftp, DOSSIER_PLATFORMS)   # output_dir: fichiers_platforms
     return downloaded_files_P
 
+
+# ------------------------------------------------------------------------------
+#         Upload updated marketplace files to their respective FTP servers
+# ------------------------------------------------------------------------------
+def upload_updated_files_to_marketplace():
+    """
+    Uploads all files in UPDATED_FILES/fichiers_platforms to their respective marketplace FTP servers.
+    Credentials are loaded from .env using the pattern FTP_HOST_<PLATFORM>, etc.
+    Logs success and failure for each upload. Retries up to 3 times on failure.
+    """
+    import time
+    from ftplib import error_perm
+    from glob import glob
+    from dotenv import load_dotenv
+
+    # Ensure .env is loaded
+    load_dotenv()
+
+    upload_dir = UPDATED_FILES_PATH
+    if not upload_dir.exists() or not upload_dir.is_dir():
+        logger.error(f"[ERROR]: Upload directory {upload_dir} does not exist or is not a directory.")
+        return
+
+    files = list(upload_dir.glob("*.csv")) + list(upload_dir.glob("*.xls")) + list(upload_dir.glob("*.xlsx")) + list(upload_dir.glob("*.txt"))
+    if not files:
+        logger.warning(f"[WARNING]: No updated files found in {upload_dir} to upload.")
+        return
+
+    for file_path in files:
+        # Extract platform name from file name (e.g., PLATFORM_A-.csv or PLATFORM_A-xxx.csv)
+        platform_name = file_path.name.split("-")[0]
+        host = os.getenv(f"FTP_HOST_{platform_name}")
+        user = os.getenv(f"FTP_USER_{platform_name}")
+        password = os.getenv(f"FTP_PASSWORD_{platform_name}")
+        if not all([host, user, password]):
+            logger.error(f"[ERROR]: FTP credentials missing for {platform_name}. Skipping upload for {file_path.name}.")
+            continue
+
+        success = False
+        for attempt in range(1, 4):  # 3 retries
+            try:
+                with FTP(host) as ftp:
+                    ftp.login(user, password)
+                    logger.info(f"[INFO]: Connected to FTP for {platform_name} (attempt {attempt}).")
+                    with open(file_path, "rb") as f:
+                        ftp.storbinary(f"STOR {file_path.name}", f)
+                    logger.info(f"[INFO]: Uploaded updated file for {platform_name} to FTP successfully.")
+                    success = True
+                    break
+            except Exception as e:
+                logger.error(f"[ERROR]: Failed to upload file {file_path.name} to FTP for {platform_name} (attempt {attempt}): {e}")
+                time.sleep(2)  # Wait before retry
+        if not success:
+            logger.error(f"[ERROR]: Failed to upload file {file_path.name} to FTP for {platform_name} after 3 attempts.")
+

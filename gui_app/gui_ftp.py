@@ -9,6 +9,7 @@ from functions.functions_update import *
 from tkinter import filedialog, messagebox
 from config.temporary_data_list import current_dataFiles
 from config.config_path_variables import *
+from functions.functions_FTP import upload_updated_files_to_marketplace
 
 
 class MajFTPFrame(ctk.CTkFrame):
@@ -244,8 +245,9 @@ class MajFTPFrame(ctk.CTkFrame):
 
             if is_store_updated:
 
-                messagebox.showinfo("Succès", "✅ La mise à jour a été effectuée avec succès.")
                 logger.info('-- -- ✅ -- --  Mise à jour effectuée -- -- ✅ -- -- ')
+                upload_updated_files_to_marketplace()
+                messagebox.showinfo("Succès", "✅ La mise à jour a été effectuée avec succès.\nFiles have been uploaded to marketplaces FTP.")
                  
                 # Supprimer ancien bouton s'il existe
                 if hasattr(self, 'open_update_btn') and self.open_update_btn.winfo_exists():

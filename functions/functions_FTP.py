@@ -211,10 +211,9 @@ def find_latest_file_for_platform(platform_dir, platform_name):
     return None
 
 
-def upload_updated_files_to_marketplace(dry_run=False, original_filenames_map=None):
+def upload_updated_files_to_marketplace(dry_run=False):
     """
     Uploads the <PLATFORM_NAME>-latest.csv file for each platform in UPDATED_FILES/fichiers_platforms/<PLATFORM_NAME>/ to its FTP server.
-    Replaces the original file that was downloaded from the platform (if original_filenames_map is provided).
     If dry_run is True, only log actions without uploading.
     """
     import time
@@ -241,13 +240,9 @@ def upload_updated_files_to_marketplace(dry_run=False, original_filenames_map=No
         if not all([host, user, password]):
             logger.error(f"[ERROR]: FTP credentials missing for {platform_name}. Skipping upload for {file_path.name}.")
             continue
-        # Determine the remote filename to replace
-        remote_filename = file_path.name
-        if original_filenames_map and platform_name in original_filenames_map:
-            remote_filename = original_filenames_map[platform_name]
-        logger.info(f"[INFO]: Preparing to upload {file_path.name} for {platform_name} to FTP as {remote_filename} (replace mode).")
+        logger.info(f"[INFO]: Preparing to upload {file_path.name} for {platform_name} to FTP.")
         if dry_run:
-            logger.info(f"[DRY RUN]: Would upload {file_path} to FTP for {platform_name} as {remote_filename}.")
+            logger.info(f"[DRY RUN]: Would upload {file_path} to FTP for {platform_name}.")
             continue
         success = False
         for attempt in range(1, 4):  # 3 retries
@@ -256,13 +251,13 @@ def upload_updated_files_to_marketplace(dry_run=False, original_filenames_map=No
                     ftp.login(user, password)  # type: ignore
                     logger.info(f"[INFO]: Connected to FTP for {platform_name} (attempt {attempt}).")
                     with open(file_path, "rb") as f:
-                        ftp.storbinary(f"STOR {remote_filename}", f)
-                    logger.info(f"[INFO]: Uploaded and replaced file for {platform_name} on FTP: {remote_filename}.")
+                        ftp.storbinary(f"STOR {file_path.name}", f)
+                    logger.info(f"[INFO]: Uploaded updated file for {platform_name} to FTP successfully.")
                     success = True
                     break
             except Exception as e:
-                logger.error(f"[ERROR]: Failed to upload file {file_path.name} to FTP for {platform_name} as {remote_filename} (attempt {attempt}): {e}")
+                logger.error(f"[ERROR]: Failed to upload file {file_path.name} to FTP for {platform_name} (attempt {attempt}): {e}")
                 time.sleep(2)  # Wait before retry
         if not success and not dry_run:
-            logger.error(f"[ERROR]: Failed to upload file {file_path.name} to FTP for {platform_name} as {remote_filename} after 3 attempts.")
+            logger.error(f"[ERROR]: Failed to upload file {file_path.name} to FTP for {platform_name} after 3 attempts.")
 

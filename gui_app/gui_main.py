@@ -16,7 +16,7 @@ sys.path.append(str(ROOT_DIR))
 
 from gui_app.gui_ftp import MajFTPFrame
 from gui_app.gui_manuelle_maj import MajManuelleFrame
-from gui_app.gui_fournisseurs import FournisseurFrame
+from gui_app.gui_fournisseurs import FournisseurAdminFrame
 from gui_app.gui_platforms import PlateformFrame
 from gui_app.gui_verification import VerificationFrame
 from gui_app.gui_configuration import ConfigurationFrame
@@ -51,7 +51,7 @@ class MainApp(ctk.CTk):
         self.frames = {
             "MAJFTP": MajFTPFrame(self.main_frame),
             "MAJManual": MajManuelleFrame(self.main_frame),
-            "fournisseur": FournisseurFrame(self.main_frame),
+            "fournisseur_admin": FournisseurAdminFrame(self.main_frame),
             "plateform": PlateformFrame(self.main_frame),
             "verification": VerificationFrame(self.main_frame),
             "configuration": ConfigurationFrame(self.main_frame)
@@ -107,8 +107,8 @@ class MainApp(ctk.CTk):
         # Buttons
         ctk.CTkButton(text="🏠 Accueil", command=lambda: self.show_frame("MAJFTP"), **button_kwargs).pack(fill="x", padx=10, pady=(15,5))
         ctk.CTkButton(text="📁 MAJ Manuelle", command=lambda: self.show_frame("MAJManual"), **button_kwargs).pack(fill="x", padx=10, pady=5)
-        ctk.CTkButton(text="📦 Fournisseurs", command=lambda: self.show_frame("fournisseur"), **button_kwargs).pack(fill="x", padx=10, pady=5)
-        ctk.CTkButton(text="🛒 Plateformes", command=lambda: self.show_frame("plateform"), **button_kwargs).pack(fill="x", padx=10, pady=5)
+        ctk.CTkButton(text="🔑 Connexions Fournisseurs", command=lambda: self.show_frame("fournisseur_admin"), **button_kwargs).pack(fill="x", padx=10, pady=5)
+        ctk.CTkButton(text="🔗 Connexions Plateformes", command=lambda: self.show_frame("plateform"), **button_kwargs).pack(fill="x", padx=10, pady=5)
         ctk.CTkButton(text="✅ Vérification", command=lambda: self.show_frame("verification"), **button_kwargs).pack(fill="x", padx=10, pady=5)
         ctk.CTkButton(text="⚙️ configuration", command=lambda: self.show_frame("configuration"), **button_kwargs).pack(fill="x", padx=10, pady=5)
 

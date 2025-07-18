@@ -1,0 +1,10 @@
+# Plateformes Connexions YAML
+# Example structure:
+# PLATFORM_A:
+#   type: FTP
+#   host: ftp.example.com
+#   port: 21
+#   username: user
+#   password: pass
+#   notes: Some note
+{}

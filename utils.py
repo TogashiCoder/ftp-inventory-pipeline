@@ -263,3 +263,18 @@ def clean_env_file(path_env):
 
     with open(path_env, "w") as f:
         f.writelines(cleaned_lines)
+
+
+def load_fournisseurs_config():
+    path = Path(__file__).resolve().parents[1] / 'config' / 'fournisseurs_connexions.yaml'
+    if not path.exists():
+        return {}
+    with open(path, 'r', encoding='utf-8') as f:
+        return yaml.safe_load(f) or {}
+
+def load_plateformes_config():
+    path = Path(__file__).resolve().parents[1] / 'config' / 'plateformes_connexions.yaml'
+    if not path.exists():
+        return {}
+    with open(path, 'r', encoding='utf-8') as f:
+        return yaml.safe_load(f) or {}

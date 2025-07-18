@@ -2,7 +2,7 @@ import os
 
 from utils import *
 from ftplib import FTP
-from dotenv import dotenv_values
+from utils import load_fournisseurs_config, load_plateformes_config
 from config.logging_config import logger
 from config.config_path_variables import *
 from functions.functions_check_ready_files import *
@@ -10,30 +10,26 @@ from functions.functions_check_ready_files import *
 # ------------------------------------------------------------------------------
 #                           FTP Configuration
 # ------------------------------------------------------------------------------
-def create_ftp_config(keys):
+def create_ftp_config(keys, is_fournisseur=True):
     """
-    keys: ["FOURNISSEUR_A", "FOURNISSEUR_B", ...]     # Same Same for Platforms
-
-    return:  {'FOURNISSEUR_A': {'host': 'ftp.fournisseur-a.com', 'user': 'user_a', 'password': 'pass_a'}, 
-              'FOURNISSEUR_B': {'host': 'ftp.fournisseur-b.com', 'user': 'user_b', 'password': 'pass_b'}, 
-              ...}                       
+    keys: ["FOURNISSEUR_A", ...] or ["PLATFORM_A", ...]
+    is_fournisseur: True for suppliers, False for platforms
     """
     config = {}
+    all_creds = load_fournisseurs_config() if is_fournisseur else load_plateformes_config()
     for key in keys:
-        host = os.getenv(f"FTP_HOST_{key}")
-        user = os.getenv(f"FTP_USER_{key}")
-        password = os.getenv(f"FTP_PASSWORD_{key}")
-
-        if not all([host, user, password]):     # Assurez que .env est bien rempli
+        creds = all_creds.get(key, {})
+        host = creds.get('host')
+        user = creds.get('username')
+        password = creds.get('password')
+        if not all([host, user, password]):
             logger.error(f'-- ❌ --  FTP config missing for {key}')
             raise ValueError(f"FTP config missing for {key}")
-
         config[key] = {
             "host": host,
             "user": user,
             "password": password
         }
-
     return config
 
 
@@ -121,7 +117,7 @@ def get_all_platforms_env(path_env=ENV_PATH):
     return list_all_platforms_env
 
 def load_fournisseurs_ftp(list_fournisseurs, report_gen=None):
-    f_data_ftp = create_ftp_config(list_fournisseurs)
+    f_data_ftp = create_ftp_config(list_fournisseurs, is_fournisseur=True)
     downloaded_files_F = {}
     for name, config in f_data_ftp.items():
         try:
@@ -156,7 +152,7 @@ def load_fournisseurs_ftp(list_fournisseurs, report_gen=None):
 
 
 def load_platforms_ftp(list_platforms, report_gen=None):
-    p_data_ftp = create_ftp_config(list_platforms)
+    p_data_ftp = create_ftp_config(list_platforms, is_fournisseur=False)
     downloaded_files_P = {}
     for name, config in p_data_ftp.items():
         try:
@@ -226,6 +222,7 @@ def upload_updated_files_to_marketplace(dry_run=False):
         logger.error(f"[ERROR]: Upload directory {upload_root} does not exist or is not a directory.")
         return
 
+    plateformes_creds = load_plateformes_config()
     for platform_dir in upload_root.iterdir():
         if not platform_dir.is_dir():
             continue
@@ -234,9 +231,10 @@ def upload_updated_files_to_marketplace(dry_run=False):
         if not file_path or not file_path.exists():
             logger.warning(f"[WARNING]: No latest file found for {platform_name} in {platform_dir}. Skipping upload.")
             continue
-        host = os.getenv(f"FTP_HOST_{platform_name}")
-        user = os.getenv(f"FTP_USER_{platform_name}")
-        password = os.getenv(f"FTP_PASSWORD_{platform_name}")
+        creds = plateformes_creds.get(platform_name, {})
+        host = creds.get('host')
+        user = creds.get('username')
+        password = creds.get('password')
         if not all([host, user, password]):
             logger.error(f"[ERROR]: FTP credentials missing for {platform_name}. Skipping upload for {file_path.name}.")
             continue

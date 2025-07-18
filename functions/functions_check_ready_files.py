@@ -152,3 +152,22 @@ def verifier_fichiers_existent(list_files):
             logger.error(f"-- ⚠️ --  Fichier introuvable pour {item_file} → '{chemin}' → supprimé.")
     
     return item_valides
+
+
+def check_ready_files(title_files, downloaded_files, yaml_with_header_items, report_gen=None):
+    logger.info(f'------------ Vérifiez si tous les fichiers {title_files} sont prêts--------------')
+    files_with_header = keep_data_with_header_specified(downloaded_files, yaml_with_header_items)
+    files_valides = verifier_fichiers_existent(files_with_header)
+    if len(files_valides) > 0:
+        logger.info(f'{len(files_valides)} fichiers sont prêts')
+    else:
+        logger.info(f'Aucun fichier trouvé')
+        if report_gen:
+            report_gen.add_warning(f"Aucun fichier trouvé pour {title_files}")
+    # Log missing columns or files
+    for key, data in files_with_header.items():
+        if key not in files_valides:
+            if report_gen:
+                report_gen.add_warning(f"Fichier manquant ou colonnes non conformes: {key}")
+    logger.info('---------------------------------------------------------------')
+    return files_valides

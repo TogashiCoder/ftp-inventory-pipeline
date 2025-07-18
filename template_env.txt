@@ -66,3 +66,4 @@ FTP_PASSWORD_PLATFORM_F=pass_f
 # For Gmail Notification
 EMAIL_ADDRESS=email@email.com
 EMAIL_PASSWORD=your_pass
+templates/email_report_template.html

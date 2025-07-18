@@ -10,6 +10,7 @@ from tkinter import filedialog, messagebox
 from config.temporary_data_list import current_dataFiles
 from config.config_path_variables import *
 from functions.functions_FTP import upload_updated_files_to_marketplace
+from functions.functions_report import ReportGenerator
 
 
 class MajFTPFrame(ctk.CTkFrame):
@@ -210,6 +211,8 @@ class MajFTPFrame(ctk.CTkFrame):
 
 
     def _run_update_process(self):
+        report_gen = ReportGenerator()
+        report_gen.start_operation()
         try:
             # ---------------------- Loding Data via FTP ---------------------
             # fichiers_fournisseurs, fichiers_platforms = config_and_load_data_from_FTP()
@@ -226,22 +229,22 @@ class MajFTPFrame(ctk.CTkFrame):
             
             # ---------------------- Load data From FTP to Local ----------------------
 
-            fichiers_fournisseurs =  load_fournisseurs_ftp(list_fournisseurs)
+            fichiers_fournisseurs =  load_fournisseurs_ftp(list_fournisseurs, report_gen=report_gen)
                                                 #  dict('FOURNISSEUR_A': chemin fichierA , 
                                                 #       'FOURNISSEUR_B': chemin fichierB,... )
 
-            fichiers_platforms = load_platforms_ftp(list_platforms)
+            fichiers_platforms = load_platforms_ftp(list_platforms, report_gen=report_gen)
             
             # ----------------------- Loding Local Data ----------------------
             # fichiers_fournisseurs, fichiers_platforms = current_dataFiles()
 
             # ---------------------- Loding Data via FTP ---------------------
            
-            fournisseurs_files_valides = check_ready_files(title_files='Fournisseurs', downloaded_files=fichiers_fournisseurs, yaml_with_header_items=HEADER_FOURNISSEURS_YAML)
-            platforms_files_valides = check_ready_files(title_files='Plateformes', downloaded_files=fichiers_platforms, yaml_with_header_items=HEADER_PLATFORMS_YAML)
+            fournisseurs_files_valides = check_ready_files(title_files='Fournisseurs', downloaded_files=fichiers_fournisseurs, yaml_with_header_items=HEADER_FOURNISSEURS_YAML, report_gen=report_gen)
+            platforms_files_valides = check_ready_files(title_files='Plateformes', downloaded_files=fichiers_platforms, yaml_with_header_items=HEADER_PLATFORMS_YAML, report_gen=report_gen)
                 
             # ------------------- Mettre A Jour le stock ---------------------
-            is_store_updated = mettre_a_jour_Stock(platforms_files_valides, fournisseurs_files_valides)
+            is_store_updated = mettre_a_jour_Stock(platforms_files_valides, fournisseurs_files_valides, report_gen=report_gen)
 
             if is_store_updated:
 
@@ -274,6 +277,21 @@ class MajFTPFrame(ctk.CTkFrame):
             messagebox.showerror("Erreur", str(e))
             # Fin du suivi
             self.log_running = False
+        finally:
+            report_gen.end_operation()
+            try:
+                report_gen.generate_html_report()
+                recipients = os.getenv('REPORT_RECIPIENTS', '').split(',')
+                recipients = [r.strip() for r in recipients if r.strip()]
+                if recipients:
+                    sent = report_gen.send_email_report(recipients)
+                    if sent:
+                        messagebox.showinfo("Rapport envoyé", "Le rapport de mise à jour a été envoyé par email.")
+                    else:
+                        messagebox.showwarning("Erreur rapport", "Le rapport n'a pas pu être envoyé par email.")
+            except Exception as report_error:
+                logger.error(f"Erreur lors de l'envoi du rapport: {report_error}")
+                messagebox.showwarning("Erreur rapport", f"Erreur lors de l'envoi du rapport: {report_error}")
         
    
 

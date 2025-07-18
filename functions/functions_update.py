@@ -12,28 +12,6 @@ from functions.functions_check_ready_files import *
 
 warnings.filterwarnings("ignore", category=UserWarning, module="openpyxl")
 
-def check_ready_files(title_files, downloaded_files, yaml_with_header_items):
-    logger.info(f'------------ Vérifiez si tous les fichiers {title_files} sont prêts--------------')
-    files_with_header = keep_data_with_header_specified(downloaded_files, yaml_with_header_items)
-    
-    #######print('\n-------->>>> Files with identified columns:', files_with_header)
-    #       ie:  {'FOURNISSEUR_A': {'chemin_fichier': './fichiers_fournisseurs/pricing_stock.xlsx', 'nom_reference': 'name', 'quantite_stock': 'on_depot'}, 'FOURNISSEUR_B': {'chemin_fichier': 
-
-    # check if files exist:
-    files_valides = verifier_fichiers_existent(files_with_header)
-   
-    #######print('\n-------->>>> Files to be used:', files_valides)
-    if len(files_valides)>0:
-        logger.info(f'{len(files_valides)} fichiers sont prêts')
-    else:
-        logger.info(f'Aucun fichier trouvé')
-
-    logger.info('---------------------------------------------------------------')
-
-    return files_valides
-
-    
-
 
 def update_plateforme(df_platform, df_fournisseurs, name_platform, name_fournisseur): 
     os.makedirs(VERIFIED_FILES_PATH, exist_ok=True)
@@ -232,49 +210,56 @@ def cumule_fournisseurs(data_fournisseurs):
     return df_cumule # data_fournisseurs
 
 
-def mettre_a_jour_Stock(valide_fichiers_platforms, valide_fichiers_fournisseurs):
+def mettre_a_jour_Stock(valide_fichiers_platforms, valide_fichiers_fournisseurs, report_gen=None):
     logger.info('--------------------- Mettre A Jour le Stock -------------------')
     if len(valide_fichiers_platforms) > 0 and len(valide_fichiers_fournisseurs)> 0:
         try: 
             data_fournisseurs = read_all_fournisseurs(valide_fichiers_fournisseurs)
             logger.info('----------- Calcule de cumule ------------------')
             data_fournisseurs_cumule = cumule_fournisseurs(data_fournisseurs)
-
             for name_p, data_p in valide_fichiers_platforms.items():
-                chemin_fichier_p = data_p['chemin_fichier']
-                nom_reference_p = data_p[YAML_REFERENCE_NAME]
-                quantite_stock_p = data_p[YAML_QUANTITY_NAME]
-
-                df_p_info = read_dataset_file(file_name=chemin_fichier_p)
-                df_p = df_p_info['dataset']
-                sep_p = df_p_info['sep']                # used for saving 
-                encoding_p = df_p_info['encoding']
-                
-                reduced_data_p = df_p[[nom_reference_p, quantite_stock_p]].copy()
-                reduced_data_p.columns = [ID_PRODUCT, QUANTITY]
-                
-                df_updated = update_plateforme(reduced_data_p, data_fournisseurs_cumule, name_p, 'cumule')
-                reduced_data_p = df_updated    # df_p = df_updated.copy()
-                
-                map_quantites = dict(zip(reduced_data_p[ID_PRODUCT], reduced_data_p[QUANTITY]))
-                df_p[quantite_stock_p] = df_p[nom_reference_p].map(map_quantites).fillna(df_p[quantite_stock_p])
-
-                # --- New save logic ---
-                platform_dir = UPDATED_FILES_PATH / name_p
-                platform_dir.mkdir(parents=True, exist_ok=True)
-                timestamp = time.strftime('%Y%m%d-%H%M%S')
-                latest_file = platform_dir / f"{name_p}-latest.csv"
-                archive_file = platform_dir / f"{name_p}-{timestamp}.csv"
-                save_file(str(latest_file), df_p, encoding=encoding_p, sep=sep_p)
-                save_file(str(archive_file), df_p, encoding=encoding_p, sep=sep_p)
-                logger.info(f"-- -- ✅ -- --  Mise à jour effectuée et fichiers sauvegardés pour : {name_p}")
+                try:
+                    chemin_fichier_p = data_p['chemin_fichier']
+                    nom_reference_p = data_p[YAML_REFERENCE_NAME]
+                    quantite_stock_p = data_p[YAML_QUANTITY_NAME]
+                    df_p_info = read_dataset_file(file_name=chemin_fichier_p)
+                    df_p = df_p_info['dataset']
+                    sep_p = df_p_info['sep']
+                    encoding_p = df_p_info['encoding']
+                    reduced_data_p = df_p[[nom_reference_p, quantite_stock_p]].copy()
+                    reduced_data_p.columns = [ID_PRODUCT, QUANTITY]
+                    df_updated = update_plateforme(reduced_data_p, data_fournisseurs_cumule, name_p, 'cumule')
+                    reduced_data_p = df_updated
+                    map_quantites = dict(zip(reduced_data_p[ID_PRODUCT], reduced_data_p[QUANTITY]))
+                    df_p[quantite_stock_p] = df_p[nom_reference_p].map(map_quantites).fillna(df_p[quantite_stock_p])
+                    platform_dir = UPDATED_FILES_PATH / name_p
+                    platform_dir.mkdir(parents=True, exist_ok=True)
+                    timestamp = time.strftime('%Y%m%d-%H%M%S')
+                    latest_file = platform_dir / f"{name_p}-latest.csv"
+                    archive_file = platform_dir / f"{name_p}-{timestamp}.csv"
+                    save_file(str(latest_file), df_p, encoding=encoding_p, sep=sep_p)
+                    save_file(str(archive_file), df_p, encoding=encoding_p, sep=sep_p)
+                    logger.info(f"-- -- ✅ -- --  Mise à jour effectuée et fichiers sauvegardés pour : {name_p}")
+                    if report_gen:
+                        report_gen.add_platform_processed(name_p)
+                        report_gen.add_file_result(str(latest_file), success=True)
+                        report_gen.add_products_count(len(df_p))
+                except Exception as e:
+                    logger.error(f"Erreur lors de la mise à jour de la plateforme {name_p}: {e}")
+                    if report_gen:
+                        report_gen.add_file_result(str(latest_file) if 'latest_file' in locals() else name_p, success=False, error_msg=str(e))
+                        report_gen.add_error(f"Erreur mise à jour plateforme {name_p}: {e}")
             logger.info('---------------------------------------------------------------')
             logger.info('================================================================')
             return True
         except Exception as e:
             logger.error(f"-- -- ❌ -- --  Mise à jour n'est pas effectuée: {e}")
+            if report_gen:
+                report_gen.add_error(f"Erreur globale mise à jour: {e}")
             return False
     else:
         logger.info(f"Nombre des Fournisseurs: {len(valide_fichiers_fournisseurs)}")
         logger.info(f"Nombre des Plateformes: {len(valide_fichiers_platforms)}")
         logger.error(f"-- -- ❌ -- --  Mise à jour n'est pas effectuée")
+        if report_gen:
+            report_gen.add_error("Aucun fichier fournisseur ou plateforme valide.")

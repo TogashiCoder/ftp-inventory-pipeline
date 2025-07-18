@@ -120,15 +120,73 @@ def get_all_platforms_env(path_env=ENV_PATH):
     _, list_all_platforms_env = separer_fournisseurs_et_plateformes(data_env)
     return list_all_platforms_env
 
-def load_fournisseurs_ftp(list_fournisseurs):
+def load_fournisseurs_ftp(list_fournisseurs, report_gen=None):
     f_data_ftp = create_ftp_config(list_fournisseurs)
-    downloaded_files_F = download_files_from_all_servers(f_data_ftp, DOSSIER_FOURNISSEURS)   # output_dir: fichiers_fournisseurs 
-    return downloaded_files_F       #  dict('FOURNISSEUR_A': chemin fichierA , 
-                                    #       'FOURNISSEUR_B': chemin fichierB,... )
+    downloaded_files_F = {}
+    for name, config in f_data_ftp.items():
+        try:
+            ftp = FTP(config["host"])
+            ftp.login(config["user"], config["password"])
+            logger.info(f"-- ✅ --  Bien connecté à l'FTP de {name}")
+            filenames = ftp.nlst()
+            ftp_file = next((f for f in filenames if f.endswith((".csv", ".xls", ".xlsx", ".txt"))), None)
+            if ftp_file:
+                extension = os.path.splitext(ftp_file)[1]
+                local_path = os.path.join(DOSSIER_FOURNISSEURS, f"{name}-{extension}")
+                success = download_file_from_ftp(ftp, ftp_file, local_path)
+                if success:
+                    downloaded_files_F[name] = local_path
+                    if report_gen:
+                        report_gen.add_supplier_processed(name)
+                        report_gen.add_file_result(local_path, success=True)
+                else:
+                    if report_gen:
+                        report_gen.add_file_result(local_path, success=False, error_msg=f"Échec du téléchargement pour {name}")
+            else:
+                logger.exception(f"-- ⚠️ --  Aucun fichier valide trouvé pour {name}")
+                if report_gen:
+                    report_gen.add_file_result(f"Aucun fichier pour {name}", success=False, error_msg="Aucun fichier valide trouvé")
+            ftp.quit()
+        except Exception as e:
+            logger.error(f"-- ❌ --  Erreur connexion FTP pour {name} : {e}")
+            if report_gen:
+                report_gen.add_file_result(f"FTP {name}", success=False, error_msg=str(e))
+                report_gen.add_error(f"Erreur FTP fournisseur {name}: {e}")
+    return downloaded_files_F
 
-def load_platforms_ftp(list_platforms):
+
+def load_platforms_ftp(list_platforms, report_gen=None):
     p_data_ftp = create_ftp_config(list_platforms)
-    downloaded_files_P = download_files_from_all_servers(p_data_ftp, DOSSIER_PLATFORMS)   # output_dir: fichiers_platforms
+    downloaded_files_P = {}
+    for name, config in p_data_ftp.items():
+        try:
+            ftp = FTP(config["host"])
+            ftp.login(config["user"], config["password"])
+            logger.info(f"-- ✅ --  Bien connecté à l'FTP de {name}")
+            filenames = ftp.nlst()
+            ftp_file = next((f for f in filenames if f.endswith((".csv", ".xls", ".xlsx", ".txt"))), None)
+            if ftp_file:
+                extension = os.path.splitext(ftp_file)[1]
+                local_path = os.path.join(DOSSIER_PLATFORMS, f"{name}-{extension}")
+                success = download_file_from_ftp(ftp, ftp_file, local_path)
+                if success:
+                    downloaded_files_P[name] = local_path
+                    if report_gen:
+                        report_gen.add_platform_processed(name)
+                        report_gen.add_file_result(local_path, success=True)
+                else:
+                    if report_gen:
+                        report_gen.add_file_result(local_path, success=False, error_msg=f"Échec du téléchargement pour {name}")
+            else:
+                logger.exception(f"-- ⚠️ --  Aucun fichier valide trouvé pour {name}")
+                if report_gen:
+                    report_gen.add_file_result(f"Aucun fichier pour {name}", success=False, error_msg="Aucun fichier valide trouvé")
+            ftp.quit()
+        except Exception as e:
+            logger.error(f"-- ❌ --  Erreur connexion FTP pour {name} : {e}")
+            if report_gen:
+                report_gen.add_file_result(f"FTP {name}", success=False, error_msg=str(e))
+                report_gen.add_error(f"Erreur FTP plateforme {name}: {e}")
     return downloaded_files_P
 
 

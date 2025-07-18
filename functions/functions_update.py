@@ -243,7 +243,10 @@ def mettre_a_jour_Stock(valide_fichiers_platforms, valide_fichiers_fournisseurs,
                     if report_gen:
                         report_gen.add_platform_processed(name_p)
                         report_gen.add_file_result(str(latest_file), success=True)
-                        report_gen.add_products_count(len(df_p))
+                        # Count unique product references updated
+                        if report_gen:
+                            unique_refs_updated = reduced_data_p[ID_PRODUCT].nunique()
+                            report_gen.add_products_count(unique_refs_updated)
                 except Exception as e:
                     logger.error(f"Erreur lors de la mise à jour de la plateforme {name_p}: {e}")
                     if report_gen:

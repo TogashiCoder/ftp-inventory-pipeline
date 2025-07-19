@@ -390,8 +390,8 @@ class MajManuelleFrame(ctk.CTkFrame):
 
             # ---------------------- Loding Data via FTP ---------------------
            
-            fournisseurs_files_valides = check_ready_files(title_files='Fournisseurs', downloaded_files=fichiers_fournisseurs, yaml_with_header_items=HEADER_FOURNISSEURS_YAML, report_gen=report_gen)
-            platforms_files_valides = check_ready_files(title_files='Plateformes', downloaded_files=fichiers_platforms, yaml_with_header_items=HEADER_PLATFORMS_YAML, report_gen=report_gen)
+            fournisseurs_files_valides = check_ready_files(title_files='Fournisseurs', downloaded_files=fichiers_fournisseurs, report_gen=report_gen)
+            platforms_files_valides = check_ready_files(title_files='Plateformes', downloaded_files=fichiers_platforms, report_gen=report_gen)
                 
             # ------------------- Mettre A Jour le stock ---------------------
             is_store_updated = mettre_a_jour_Stock(platforms_files_valides, fournisseurs_files_valides, report_gen=report_gen)

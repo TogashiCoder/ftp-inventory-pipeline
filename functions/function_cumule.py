@@ -9,7 +9,7 @@ fichiers_fournisseurs = {'FOURNISSEUR_H': './fichiers_fournisseurs/1210021_SBSho
                          'FOURNISSEUR_K': './fichiers_fournisseurs/rad_02.csv',}
     
     
-pret_fichiers_fournisseurs = keep_data_with_header_specified(fichiers_fournisseurs, yaml_with_header_items=HEADER_FOURNISSEURS_YAML)
+pret_fichiers_fournisseurs = keep_data_with_header_specified(fichiers_fournisseurs)
 valide_fichiers_fournisseurs = verifier_fichiers_existent(pret_fichiers_fournisseurs)
 
 

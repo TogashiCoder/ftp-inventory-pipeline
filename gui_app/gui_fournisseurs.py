@@ -46,10 +46,12 @@ class FournisseurAdminFrame(ctk.CTkFrame):
         self.edit_btn = ctk.CTkButton(btn_frame, text="✏️ Modifier", command=self.edit_fournisseur_modal, state="disabled")
         self.del_btn = ctk.CTkButton(btn_frame, text="🗑️ Supprimer", command=self.remove_fournisseur, state="disabled")
         self.test_btn = ctk.CTkButton(btn_frame, text="🔌 Tester Connexion", command=self.test_connexion, state="disabled")
+        self.mapping_btn = ctk.CTkButton(btn_frame, text="🗂️ Gérer les mappings de colonnes", command=self.open_mapping_modal, state="disabled")
         self.add_btn.pack(side="left", padx=5)
         self.edit_btn.pack(side="left", padx=5)
         self.del_btn.pack(side="left", padx=5)
         self.test_btn.pack(side="left", padx=5)
+        self.mapping_btn.pack(side="left", padx=5)
 
         # Status bar
         self.status_bar = ctk.CTkLabel(self, text="", font=("Segoe UI", 11), text_color="#888", anchor="w")
@@ -86,6 +88,7 @@ class FournisseurAdminFrame(ctk.CTkFrame):
         self.edit_btn.configure(state="disabled")
         self.del_btn.configure(state="disabled")
         self.test_btn.configure(state="disabled")
+        self.mapping_btn.configure(state="disabled")
         self.status_bar.configure(text="Sélectionnez un fournisseur pour modifier, supprimer ou tester.", text_color="#888")
         # Set focus to Add button to remove hover from last row
         self.add_btn.focus_set()
@@ -99,6 +102,7 @@ class FournisseurAdminFrame(ctk.CTkFrame):
         self.edit_btn.configure(state="normal")
         self.del_btn.configure(state="normal")
         self.test_btn.configure(state="normal")
+        self.mapping_btn.configure(state="normal")
         self.status_bar.configure(text=f"Fournisseur sélectionné: {name}", text_color="#253d61")
 
     def add_fournisseur_modal(self):
@@ -216,3 +220,62 @@ class FournisseurAdminFrame(ctk.CTkFrame):
             self.status_bar.configure(text="Connexion FTP réussie !", text_color="#1a7f37")
         except Exception as e:
             self.status_bar.configure(text=f"Échec de la connexion FTP : {e}", text_color="#d6470e")
+
+    def open_mapping_modal(self):
+        if not self.selected_fournisseur:
+            messagebox.showinfo("Info", "Sélectionnez un fournisseur pour gérer les mappings.")
+            return
+        from utils import get_entity_mappings, set_entity_mappings, ALLOWED_TARGETS
+        mappings = get_entity_mappings(self.selected_fournisseur)
+        modal = ctk.CTkToplevel(self)
+        modal.title(f"Mappings de colonnes pour {self.selected_fournisseur}")
+        modal.geometry("500x350")
+        modal.grab_set()
+        modal.focus()
+        modal.resizable(False, False)
+        table_frame = ctk.CTkFrame(modal)
+        table_frame.pack(fill="both", expand=True, padx=10, pady=10)
+        header = ctk.CTkLabel(table_frame, text="Source", width=200)
+        header.grid(row=0, column=0, padx=5)
+        header2 = ctk.CTkLabel(table_frame, text="Cible", width=200)
+        header2.grid(row=0, column=1, padx=5)
+        row_widgets = []
+        def refresh_mapping_table():
+            for w in row_widgets:
+                w[0].destroy()
+                w[1].destroy()
+                w[2].destroy()
+            row_widgets.clear()
+            for idx, mapping in enumerate(mappings):
+                src_var = ctk.StringVar(value=mapping.get('source',''))
+                tgt_var = ctk.StringVar(value=mapping.get('target',''))
+                src_entry = ctk.CTkEntry(table_frame, textvariable=src_var, width=200)
+                src_entry.grid(row=idx+1, column=0, padx=5, pady=2)
+                tgt_combo = ctk.CTkComboBox(table_frame, values=ALLOWED_TARGETS, width=200)
+                tgt_combo.set(mapping.get('target',''))
+                tgt_combo.grid(row=idx+1, column=1, padx=5, pady=2)
+                del_btn = ctk.CTkButton(table_frame, text="❌", width=30, command=lambda i=idx: delete_mapping(i))
+                del_btn.grid(row=idx+1, column=2, padx=2)
+                row_widgets.append((src_entry, tgt_combo, del_btn))
+        def add_mapping():
+            mappings.append({'source':'','target':ALLOWED_TARGETS[0]})
+            refresh_mapping_table()
+        def delete_mapping(idx):
+            if 0 <= idx < len(mappings):
+                mappings.pop(idx)
+                refresh_mapping_table()
+        def save_mappings():
+            new_mappings = []
+            for src_entry, tgt_combo, _ in row_widgets:
+                src = src_entry.get().strip()
+                tgt = tgt_combo.get().strip()
+                if src and tgt in ALLOWED_TARGETS:
+                    new_mappings.append({'source': src, 'target': tgt})
+            set_entity_mappings(self.selected_fournisseur, new_mappings)
+            modal.destroy()
+            messagebox.showinfo("Succès", "Mappings enregistrés.")
+        add_btn = ctk.CTkButton(modal, text="➕ Ajouter mapping", command=add_mapping)
+        add_btn.pack(pady=5)
+        save_btn = ctk.CTkButton(modal, text="💾 Enregistrer", command=save_mappings)
+        save_btn.pack(pady=5)
+        refresh_mapping_table()

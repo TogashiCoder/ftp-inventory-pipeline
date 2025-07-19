@@ -65,8 +65,8 @@ downloaded_files_F, downloaded_files_P = current_dataFiles()
 input : list_fichiers ==> dict('FOURNISSEUR_A': chemin fichierA , 
                                'FOURNISSEUR_B': chemin fichierB,... )
 '''
-keep_fournisseurs = keep_data_with_header_specified(downloaded_files_F, yaml_with_header_items=HEADER_FOURNISSEURS_YAML)
-keep_platforms = keep_data_with_header_specified(downloaded_files_P, yaml_with_header_items=HEADER_PLATFORMS_YAML)
+keep_fournisseurs = keep_data_with_header_specified(downloaded_files_F)
+keep_platforms = keep_data_with_header_specified(downloaded_files_P)
 '''
 Returns:
         Dict avec fournisseurs valides et info associée:

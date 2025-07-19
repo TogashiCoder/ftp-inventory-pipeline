@@ -19,6 +19,6 @@ downloaded_files_F =  load_fournisseurs_ftp(list_fournisseurs)
 downloaded_files_P = load_platforms_ftp(list_platforms)
 
 
-fournisseurs_files_valides = check_ready_files(title_files='Fournisseurs', downloaded_files=downloaded_files_F, yaml_with_header_items=HEADER_FOURNISSEURS_YAML)
-platforms_files_valides = check_ready_files(title_files='Plateformes', downloaded_files=downloaded_files_P, yaml_with_header_items=HEADER_PLATFORMS_YAML)
+fournisseurs_files_valides = check_ready_files(title_files='Fournisseurs', downloaded_files=downloaded_files_F)
+platforms_files_valides = check_ready_files(title_files='Plateformes', downloaded_files=downloaded_files_P)
 

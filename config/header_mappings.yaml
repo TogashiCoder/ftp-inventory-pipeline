@@ -1,0 +1,99 @@
+# Header mappings for fournisseurs and platforms
+# Only 'nom_reference' and 'quantite_stock' are allowed as target fields
+# Example:
+# FOURNISSEUR_A:
+#   - source: 'CodeArticle'  # column in the supplier file
+#     target: 'nom_reference'
+#   - source: 'Stock'        # column in the supplier file
+#     target: 'quantite_stock'
+# PLATFORM_A:
+#   - source: 'ProductID'
+#     target: 'nom_reference'
+#   - source: 'Qty'
+#     target: 'quantite_stock'
+
+FOURNISSEUR_A:
+  - source: "name"
+    target: "nom_reference"
+  - source: "on_depot"
+    target: "quantite_stock"
+FOURNISSEUR_B:
+  - source: "(1) KTM"
+    target: "nom_reference"
+  - source: "(2) Main Warehouse"
+    target: "quantite_stock"
+FOURNISSEUR_C:
+  - source: "Codes de produits"
+    target: "nom_reference"
+  - source: "Quantites"
+    target: "quantite_stock"
+FOURNISSEUR_D:
+  - source: "SKU"
+    target: "nom_reference"
+  - source: "Stock"
+    target: "quantite_stock"
+FOURNISSEUR_E:
+  - source: "Part Number"
+    target: "nom_reference"
+  - source: "Quantity Available"
+    target: "quantite_stock"
+FOURNISSEUR_F:
+  - source: 0
+    target: "nom_reference"
+  - source: 2
+    target: "quantite_stock"
+FOURNISSEUR_G:
+  - source: "ITEMID"
+    target: "nom_reference"
+  - source: "Viborg"
+    target: "quantite_stock"
+FOURNISSEUR_H:
+  - source: "Article number"
+    target: "nom_reference"
+  - source: "Supplier stock"
+    target: "quantite_stock"
+FOURNISSEUR_I:
+  - source: 1
+    target: "nom_reference"
+  - source: 2
+    target: "quantite_stock"
+FOURNISSEUR_J:
+  - source: 1
+    target: "nom_reference"
+  - source: 2
+    target: "quantite_stock"
+PLATFORM_A:
+  - source: "productReference"
+    target: "nom_reference"
+  - source: "Stock"
+    target: "quantite_stock"
+PLATFORM_B:
+  - source: "interne Artikelnummer"
+    target: "nom_reference"
+  - source: "Zustand"
+    target: "quantite_stock"
+PLATFORM_C:
+  - source: "article_nr"
+    target: "nom_reference"
+  - source: "quantity"
+    target: "quantite_stock"
+PLATFORM_D:
+  - source: "ProductReference"
+    target: "nom_reference"
+  - source: "Stock"
+    target: "quantite_stock"
+PLATFORM_E:
+  - source: "ID Produit"
+    target: "nom_reference"
+  - source: "Quantité Offre"
+    target: "quantite_stock"
+PLATFORM_F:
+  - source: "reference"
+    target: "nom_reference"
+  - source: "stock"
+    target: "quantite_stock"
+PLATFORM_G:
+  - source: "artikelnr"
+    target: "nom_reference"
+  - source: "menge"
+    target: "quantite_stock"

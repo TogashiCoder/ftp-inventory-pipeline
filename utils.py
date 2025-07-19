@@ -398,3 +398,42 @@ def get_valid_platforms(timeout=5):
     
     print(f"\nValid FTP connections: {len(valid)}/{len(platforms)}")
     return valid
+
+import yaml
+HEADER_MAPPINGS_PATH = Path(__file__).resolve().parents[1] / 'config' / 'header_mappings.yaml'
+
+ALLOWED_TARGETS = ['nom_reference', 'quantite_stock']
+
+def load_header_mappings():
+    if not HEADER_MAPPINGS_PATH.exists():
+        return {}
+    with open(HEADER_MAPPINGS_PATH, 'r', encoding='utf-8') as f:
+        return yaml.safe_load(f) or {}
+
+def save_header_mappings(mappings):
+    with open(HEADER_MAPPINGS_PATH, 'w', encoding='utf-8') as f:
+        yaml.safe_dump(mappings, f, allow_unicode=True)
+
+def get_entity_mappings(entity):
+    mappings = load_header_mappings()
+    return mappings.get(entity, [])
+
+def set_entity_mappings(entity, mapping_list):
+    mappings = load_header_mappings()
+    mappings[entity] = [m for m in mapping_list if m.get('target') in ALLOWED_TARGETS]
+    save_header_mappings(mappings)
+
+def delete_entity_mappings(entity):
+    mappings = load_header_mappings()
+    if entity in mappings:
+        del mappings[entity]
+        save_header_mappings(mappings)
+
+def cleanup_orphan_mappings():
+    mappings = load_header_mappings()
+    fournisseurs = set(load_fournisseurs_config().keys())
+    platforms = set(load_plateformes_config().keys())
+    valid_entities = fournisseurs | platforms
+    cleaned = {k: v for k, v in mappings.items() if k in valid_entities}
+    if cleaned != mappings:
+        save_header_mappings(cleaned)

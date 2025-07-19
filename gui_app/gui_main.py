@@ -108,7 +108,7 @@ class MainApp(ctk.CTk):
         ctk.CTkButton(text="🏠 Accueil", command=lambda: self.show_frame("MAJFTP"), **button_kwargs).pack(fill="x", padx=10, pady=(15,5))
         ctk.CTkButton(text="📁 MAJ Manuelle", command=lambda: self.show_frame("MAJManual"), **button_kwargs).pack(fill="x", padx=10, pady=5)
         ctk.CTkButton(text="🔑 Connexions Fournisseurs", command=lambda: self.show_frame("fournisseur_admin"), **button_kwargs).pack(fill="x", padx=10, pady=5)
-        ctk.CTkButton(text="🔗 Connexions Plateformes", command=lambda: self.show_frame("plateform"), **button_kwargs).pack(fill="x", padx=10, pady=5)
+        ctk.CTkButton(text="🔑 Connexions Plateformes", command=lambda: self.show_frame("plateform"), **button_kwargs).pack(fill="x", padx=10, pady=5)
         ctk.CTkButton(text="✅ Vérification", command=lambda: self.show_frame("verification"), **button_kwargs).pack(fill="x", padx=10, pady=5)
         ctk.CTkButton(text="⚙️ configuration", command=lambda: self.show_frame("configuration"), **button_kwargs).pack(fill="x", padx=10, pady=5)
 

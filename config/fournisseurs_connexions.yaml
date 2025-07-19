@@ -1,7 +1,49 @@
-test:
-  host: dwdw
-  notes: dwdwdw
-  password: yddwwd
-  port: 21
+FOURNISSEUR_A:
   type: FTP
-  username: dwdwd
+  host: 192.168.1.112
+  port: 21
+  username: fournisseur_a
+  password: fournisseur_a_pass
+  notes: ""
+FOURNISSEUR_B:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: fournisseur_b
+  password: fournisseur_b_pass
+  notes: ""
+FOURNISSEUR_C:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: fournisseur_c
+  password: fournisseur_c_pass
+  notes: ""
+FOURNISSEUR_D:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: fournisseur_d
+  password: fournisseur_d_pass
+  notes: ""
+FOURNISSEUR_E:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: fournisseur_e
+  password: fournisseur_e_pass
+  notes: ""
+FOURNISSEUR_F:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: fournisseur_f
+  password: fournisseur_f_pass
+  notes: ""
+FOURNISSEUR_G:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: fournisseur_g
+  password: fournisseur_g_pass
+  notes: ""

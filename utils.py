@@ -5,6 +5,8 @@ import yaml
 import pandas as pd
 import smtplib
 import chardet
+import socket
+from ftplib import FTP
 
 from pathlib import Path
 from dotenv import load_dotenv
@@ -266,15 +268,133 @@ def clean_env_file(path_env):
 
 
 def load_fournisseurs_config():
-    path = Path(__file__).resolve().parents[1] / 'config' / 'fournisseurs_connexions.yaml'
+    # First try current working directory
+    current_dir = Path.cwd()
+    path = current_dir / 'config' / 'fournisseurs_connexions.yaml'
+    
+    # If not found, try the directory containing this script
     if not path.exists():
+        path = Path(__file__).resolve().parent / 'config' / 'fournisseurs_connexions.yaml'
+    
+    print(f"Loading fournisseurs config from: {path}")
+    print(f"Path exists: {path.exists()}")
+    
+    if not path.exists():
+        print("Fournisseurs config file not found!")
         return {}
-    with open(path, 'r', encoding='utf-8') as f:
-        return yaml.safe_load(f) or {}
+        
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f) or {}
+            print(f"Loaded {len(config)} fournisseurs")
+            print(f"Fournisseurs: {list(config.keys())}")
+            return config
+    except Exception as e:
+        print(f"Error loading fournisseurs config: {e}")
+        return {}
 
 def load_plateformes_config():
-    path = Path(__file__).resolve().parents[1] / 'config' / 'plateformes_connexions.yaml'
+    # First try current working directory
+    current_dir = Path.cwd()
+    path = current_dir / 'config' / 'plateformes_connexions.yaml'
+    
+    # If not found, try the directory containing this script
     if not path.exists():
+        path = Path(__file__).resolve().parent / 'config' / 'plateformes_connexions.yaml'
+    
+    print(f"Loading plateformes config from: {path}")
+    print(f"Path exists: {path.exists()}")
+    
+    if not path.exists():
+        print("Plateformes config file not found!")
         return {}
-    with open(path, 'r', encoding='utf-8') as f:
-        return yaml.safe_load(f) or {}
+        
+    try:
+        with open(path, 'r', encoding='utf-8') as f:
+            config = yaml.safe_load(f) or {}
+            print(f"Loaded {len(config)} plateformes")
+            print(f"Plateformes: {list(config.keys())}")
+            return config
+    except Exception as e:
+        print(f"Error loading plateformes config: {e}")
+        return {}
+
+def get_valid_fournisseurs(timeout=5):
+    """
+    Tests FTP connections for all configured suppliers and returns only those with valid connections.
+    Args:
+        timeout (int): Connection timeout in seconds
+    Returns:
+        list: List of supplier names with valid FTP connections
+    """
+    valid = []
+    invalid = []
+    fournisseurs = load_fournisseurs_config()
+    
+    print(f"\nTesting FTP connections for {len(fournisseurs)} fournisseurs...")
+    for name, info in fournisseurs.items():
+        try:
+            with FTP() as ftp:
+                ftp.connect(
+                    host=info['host'],
+                    port=int(info.get('port', 21)),
+                    timeout=timeout
+                )
+                ftp.login(
+                    user=info['username'],
+                    passwd=info['password']
+                )
+                valid.append(name)
+                print(f"✅ {name}: Connection successful")
+        except Exception as e:
+            invalid.append((name, str(e)))
+            print(f"❌ {name}: Connection failed - {str(e)}")
+            logger.warning(f"Fournisseur {name} FTP connection failed: {e}")
+    
+    if invalid:
+        print("\nInvalid FTP connections:")
+        for name, error in invalid:
+            print(f"- {name}: {error}")
+    
+    print(f"\nValid FTP connections: {len(valid)}/{len(fournisseurs)}")
+    return valid
+
+def get_valid_platforms(timeout=5):
+    """
+    Tests FTP connections for all configured platforms and returns only those with valid connections.
+    Args:
+        timeout (int): Connection timeout in seconds
+    Returns:
+        list: List of platform names with valid FTP connections
+    """
+    valid = []
+    invalid = []
+    platforms = load_plateformes_config()
+    
+    print(f"\nTesting FTP connections for {len(platforms)} platforms...")
+    for name, info in platforms.items():
+        try:
+            with FTP() as ftp:
+                ftp.connect(
+                    host=info['host'],
+                    port=int(info.get('port', 21)),
+                    timeout=timeout
+                )
+                ftp.login(
+                    user=info['username'],
+                    passwd=info['password']
+                )
+                valid.append(name)
+                print(f"✅ {name}: Connection successful")
+        except Exception as e:
+            invalid.append((name, str(e)))
+            print(f"❌ {name}: Connection failed - {str(e)}")
+            logger.warning(f"Platform {name} FTP connection failed: {e}")
+    
+    if invalid:
+        print("\nInvalid FTP connections:")
+        for name, error in invalid:
+            print(f"- {name}: {error}")
+    
+    print(f"\nValid FTP connections: {len(valid)}/{len(platforms)}")
+    return valid

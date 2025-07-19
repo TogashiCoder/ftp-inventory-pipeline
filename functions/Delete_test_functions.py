@@ -37,19 +37,7 @@ list_fichiers ==> dict('FOURNISSEUR_A': chemin fichierA ,
 # ==========================================================================
 #               Read ENV end get All "Fournisseurs"/ "Platforms"
 # ==========================================================================
-data_env = get_info_ftp_env(path_env=ENV_PATH)
-print('data: ', data_env)
-'''
-    return: 
-        data: all env content:
-         
-               {'FOURNISSEUR_A': {'host': 'ftp.platform-a.com', 'user': 'user_a', 'password': 'pass_a'}, 
-                'FOURNISSEUR_B': {...},
-                'PLATFORM_A': {'host': 'ftp.platform-a.com', 'user': 'user_a', 'password': 'pass_a'}, 
-                'PLATFORM_B': {...},
-                ...
-                }
-'''
+# Remove any remaining references or comments about .env-based FTP config. Ensure all FTP access is YAML-based only.
 
 fournis, platf = separer_fournisseurs_et_plateformes(data_env)
 print('fournis: ', fournis)

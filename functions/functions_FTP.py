@@ -106,16 +106,6 @@ def download_files_from_all_servers(ftp_servers, output_dir):
 # ------------------------------------------------------------------------------
 #       Load all/few Fournisseurs/ platforms existed in env file             
 # ------------------------------------------------------------------------------
-def get_all_fournisseurs_env(path_env=ENV_PATH):
-    data_env = get_info_ftp_env(path_env=path_env)          # return: {'FOURNISSEUR_A': {'host': '...',...}, 'PLATFORM_A': {'host': '...',}}
-    list_all_fournisseurs_env, _ = separer_fournisseurs_et_plateformes(data_env)        #  ['FOURNISSEUR_A', 'FOURNISSEUR_B', ...]  ,   ['PLATFORM_A', ...]
-    return list_all_fournisseurs_env
-
-def get_all_platforms_env(path_env=ENV_PATH):
-    data_env = get_info_ftp_env(path_env=path_env)  
-    _, list_all_platforms_env = separer_fournisseurs_et_plateformes(data_env)
-    return list_all_platforms_env
-
 def load_fournisseurs_ftp(list_fournisseurs, report_gen=None):
     f_data_ftp = create_ftp_config(list_fournisseurs, is_fournisseur=True)
     downloaded_files_F = {}

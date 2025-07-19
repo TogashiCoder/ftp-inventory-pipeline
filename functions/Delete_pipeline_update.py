@@ -3,8 +3,7 @@ from functions.functions_FTP import *
 from functions.functions_update import *
 
 # --------------------- All Fournisseurs / Platforms ----------------------
-list_all_fournisseurs_env = get_all_fournisseurs_env(path_env=ENV_PATH)
-list_all_platforms_env = get_all_platforms_env(path_env=ENV_PATH)
+# Remove usage of get_all_fournisseurs_env and get_all_platforms_env
 
 # ------------------ Few Checked Fournisseurs / Platforms -----------------
 list_fournisseurs = ["FOURNISSEUR_A", "FOURNISSEUR_B"] #, ...]

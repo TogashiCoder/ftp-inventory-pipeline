@@ -11,10 +11,12 @@ from config.temporary_data_list import current_dataFiles
 from config.config_path_variables import *
 from functions.functions_FTP import upload_updated_files_to_marketplace
 from functions.functions_report import ReportGenerator
+from utils import load_fournisseurs_config, load_plateformes_config, get_valid_fournisseurs, get_valid_platforms
 
 
 class MajFTPFrame(ctk.CTkFrame):
     def __init__(self, parent):
+        print('MajFTPFrame from gui_ftp.py initialized')
         super().__init__(parent)
         # Common button style with orange theme
         orange_hover =  "#ef8018"#"#FFA500"   # Darker orange on hover
@@ -150,22 +152,28 @@ class MajFTPFrame(ctk.CTkFrame):
 
         # -------------------------------------------------------------------------
     def on_platforms_checkbox_change(self):
-        if self.platforms_var.get():
-            list_platforms = get_all_platforms_env(path_env=ENV_PATH)
-            print('(())', type(list_platforms))
-        else:
-            list_platforms = dict()
-
-        return list_platforms
+        # Use YAML config for list of platforms
+        plateformes = get_valid_platforms()
+        selected = []
+        for name, var in self.platform_vars.items():
+            var.set(self.platforms_var.get())
+            self.platform_checkboxes[name].configure(state="disabled" if self.platforms_var.get() else "normal")
+            if var.get():
+                selected.append(name)
+        print('Platforms selectionés: ', selected)
+        return plateformes if self.platforms_var.get() else []
     
     def on_fournisseurs_checkbox_change(self):
-        if self.fournisseurs_var.get():
-            list_fournisseurs = get_all_fournisseurs_env(path_env=ENV_PATH)
-            print('(())', type(list_fournisseurs))
-        else:
-            list_fournisseurs = dict()
-
-        return list_fournisseurs
+        # Use YAML config for list of fournisseurs
+        fournisseurs = get_valid_fournisseurs()
+        selected = []
+        for name, var in self.fournisseur_vars.items():
+            var.set(self.fournisseurs_var.get())
+            self.fournisseur_checkboxes[name].configure(state="disabled" if self.fournisseurs_var.get() else "normal")
+            if var.get():
+                selected.append(name)
+        print('Fournisseurs selectionés: ', selected)
+        return fournisseurs if self.fournisseurs_var.get() else []
 
 
     
@@ -346,17 +354,23 @@ class MajFTPFrame(ctk.CTkFrame):
             messagebox.showerror("Erreur", f"Impossible d'ouvrir le dossier : {str(e)}")
 
     
-    def populate_list(self, container, items):
+    def populate_list(self, container, items, is_fournisseur=True):
         for item in items:
-            self.platform_var = ctk.BooleanVar(value=True)
-            self.platform_checkbox = ctk.CTkCheckBox(
+            var = ctk.BooleanVar(value=True)
+            checkbox = ctk.CTkCheckBox(
                 container,
                 text=f" {item}",
-                **self.checkbox_mini_style, 
-                variable=self.platform_var
-            ) 
-            self.platform_checkbox.pack(anchor="w", pady=2, padx=15)
-            
+                **self.checkbox_mini_style,
+                variable=var
+            )
+            checkbox.pack(anchor="w", pady=2, padx=15)
+            if is_fournisseur:
+                self.fournisseur_vars[item] = var
+                self.fournisseur_checkboxes[item] = checkbox
+            else:
+                self.platform_vars[item] = var
+                self.platform_checkboxes[item] = checkbox
+
 
     def show_logs(self, LOG_FILE_PATH):
         if not os.path.exists(LOG_FILE_PATH):
@@ -385,23 +399,16 @@ class MajFTPFrame(ctk.CTkFrame):
     
     
     def load_ftp_infos(self):
-        data = get_info_ftp_env(ENV_PATH)  # Tu peux aussi spécifier un path .env ici
-        fournisseurs = []
-        plateformes = []
-
-        for nom_entite, infos in data.items():
-            # exemple nom_entite: FOURNISSEUR_A
-            label = f"{nom_entite} : {infos.get('host', 'inconnu')}"
-            if nom_entite.startswith("FOURNISSEUR"):
-                fournisseurs.append(label)
-            elif nom_entite.startswith("PLATFORM"):
-                plateformes.append(label)
-
-        # Nettoie les anciennes entrées si besoin
+        # TEMP: Show all YAML entries, not just valid FTPs
+        fournisseurs = list(load_fournisseurs_config().keys())
+        plateformes = list(load_plateformes_config().keys())
         for widget in self.fournisseur_list.winfo_children():
             widget.destroy()
         for widget in self.plateform_list.winfo_children():
             widget.destroy()
-
-        self.populate_list(self.fournisseur_list, fournisseurs)
-        self.populate_list(self.plateform_list, plateformes)
+        self.fournisseur_vars = {}
+        self.fournisseur_checkboxes = {}
+        self.platform_vars = {}
+        self.platform_checkboxes = {}
+        self.populate_list(self.fournisseur_list, fournisseurs, is_fournisseur=True)
+        self.populate_list(self.plateform_list, plateformes, is_fournisseur=False)

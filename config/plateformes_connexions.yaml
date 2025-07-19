@@ -1,10 +1,49 @@
-# Plateformes Connexions YAML
-# Example structure:
-# PLATFORM_A:
-#   type: FTP
-#   host: ftp.example.com
-#   port: 21
-#   username: user
-#   password: pass
-#   notes: Some note
-{}
+PLATFORM_A:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: platform_a
+  password: platform_a_pass
+  notes: ""
+PLATFORM_B:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: platform_b
+  password: platform_b_pass
+  notes: ""
+PLATFORM_C:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: platform_c
+  password: platform_c_pass
+  notes: ""
+PLATFORM_D:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: platform_d
+  password: platform_d_pass
+  notes: ""
+PLATFORM_E:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: platform_e
+  password: platform_e_pass
+  notes: ""
+PLATFORM_F:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: platform_f
+  password: platform_f_pass
+  notes: ""
+PLATFORM_G:
+  type: FTP
+  host: 192.168.1.112
+  port: 21
+  username: platform_g
+  password: platform_g_pass
+  notes: ""

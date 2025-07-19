@@ -1,9 +1,5 @@
 from config.config_path_variables import * 
 
-ENV_PATH = ROOT_DIR / ".env"
-print('ENV_PATH =', ENV_PATH)
-load_dotenv(ENV_PATH)
-
 # Dossiers importants
 print('LOG_FOLDER =', LOG_FOLDER)
 print('CONFIG =', CONFIG)

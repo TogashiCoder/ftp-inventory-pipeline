@@ -8,7 +8,7 @@ import customtkinter as ctk
 
 from pathlib import Path
 from tkinter import scrolledtext
-from utils import read_yaml_file
+from utils import read_yaml_file, load_fournisseurs_config, load_plateformes_config
 from functions.functions_update import *
 from config.logging_config import logger
 from config.config_path_variables import *
@@ -137,8 +137,8 @@ class MajManuelleFrame(ctk.CTkFrame):
         self.list_fournisseurs = {}
         self.platform_blocks = {}
         self.fournisseur_blocks = {}
-        self.load_platforms_from_yaml(HEADER_PLATFORMS_YAML)
-        self.load_fournisseurs_from_yaml(HEADER_FOURNISSEURS_YAML)
+        self.load_platforms_from_yaml()
+        self.load_fournisseurs_from_yaml()
 
 
         
@@ -156,14 +156,9 @@ class MajManuelleFrame(ctk.CTkFrame):
         
         # -----------------------------------------------------
 
-    def load_platforms_from_yaml(self, yaml_path):
+    def load_platforms_from_yaml(self, yaml_path=None):
         try:
-            platforms_data = read_yaml_file(yaml_path=yaml_path)
-            # Boucle sur les plateformes
-            """for idx, (platform_key, platform_info) in enumerate(platforms_data.items()):
-                letter = string.ascii_uppercase[idx]  # A, B, C...
-                self.create_platform_block(letter, platform_key)
-            """
+            platforms_data = load_plateformes_config()
             lettres = list(string.ascii_uppercase)
             for i, platform_key in enumerate(platforms_data.keys()):
                 letter = lettres[i] if i < len(lettres) else f"Extra_{i}"
@@ -173,14 +168,9 @@ class MajManuelleFrame(ctk.CTkFrame):
 
 
 
-    def load_fournisseurs_from_yaml(self, yaml_path):
+    def load_fournisseurs_from_yaml(self, yaml_path=None):
         try:
-            fournisseurs_data = read_yaml_file(yaml_path=yaml_path)
-            # Boucle sur les plateformes
-            """for idx, (platform_key, platform_info) in enumerate(platforms_data.items()):
-                letter = string.ascii_uppercase[idx]  # A, B, C...
-                self.create_platform_block(letter, platform_key)
-            """
+            fournisseurs_data = load_fournisseurs_config()
             lettres = list(string.ascii_uppercase)
             for i, fournisseur_key in enumerate(fournisseurs_data.keys()):
                 letter = lettres[i] if i < len(lettres) else f"Extra_{i}"

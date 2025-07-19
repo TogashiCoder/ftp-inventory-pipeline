@@ -295,24 +295,12 @@ class MajFTPFrame(ctk.CTkFrame):
     from dotenv import dotenv_values  # Assure-toi que c'est bien importé
 
     def load_ftp_infos(self):
-        data = get_info_ftp_env(ENV_PATH)  # Tu peux aussi spécifier un path .env ici
-        fournisseurs = []
-        plateformes = []
-
-        for nom_entite, infos in data.items():
-            # exemple nom_entite: FOURNISSEUR_A
-            label = f"{nom_entite} : {infos.get('host', 'inconnu')}"
-            if nom_entite.startswith("FOURNISSEUR"):
-                fournisseurs.append(label)
-            elif nom_entite.startswith("PLATFORM"):
-                plateformes.append(label)
-
-        # Nettoie les anciennes entrées si besoin
+        fournisseurs = [f for f in load_fournisseurs_config().keys()]
+        plateformes = [p for p in load_plateformes_config().keys()]
         for widget in self.fournisseur_list.winfo_children():
             widget.destroy()
         for widget in self.plateform_list.winfo_children():
             widget.destroy()
-
         self.populate_list(self.fournisseur_list, fournisseurs)
         self.populate_list(self.plateform_list, plateformes)
 

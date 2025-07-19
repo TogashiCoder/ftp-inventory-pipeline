@@ -9,6 +9,7 @@ from functions.functions_update import *
 from tkinter import filedialog, messagebox
 from config.temporary_data_list import current_dataFiles
 from functions.functions_FTP import upload_updated_files_to_marketplace
+from utils import get_valid_fournisseurs, get_valid_platforms
 
 
 class MajFTPFrame(ctk.CTkFrame):
@@ -161,41 +162,18 @@ class MajFTPFrame(ctk.CTkFrame):
     
 
     def on_fournisseurs_checkbox_change(self):
-        state = "disabled" if self.fournisseurs_var.get() else "normal"
-        selected = []
-
-        for name, var in self.fournisseur_vars.items():
-            var.set(self.fournisseurs_var.get())
-            self.fournisseur_checkboxes[name].configure(state=state)
-            if var.get():
-                selected.append(name)
-            print('Fournisseurs selectionés: ', selected)
-            list_fournisseurs = get_all_fournisseurs_env(path_env=ENV_PATH)
-      
-        else:
-            for var in self.fournisseur_vars.values():
-                var.set(False)
-            print('Fournisseurs selectionés: ', self.get_selected_fournisseurs())
-            list_fournisseurs = []
-      
-        return list_fournisseurs
-
-    def on_fournisseurs_checkbox_change(self):
         if self.fournisseurs_var.get():
             for var in self.fournisseur_vars.values():
                 var.set(True)
                 var.configure(state="disabled")
             print('Fournisseurs selectionés: ', self.get_selected_fournisseurs())
-            list_fournisseurs = get_all_fournisseurs_env(path_env=ENV_PATH)
-      
+            list_fournisseurs = get_valid_fournisseurs()
         else:
             for var in self.fournisseur_vars.values():
                 var.set(False)
                 var.configure(state="normal")
-
             print('Fournisseurs selectionés: ', self.get_selected_fournisseurs())
             list_fournisseurs = []
-      
         return list_fournisseurs
 
 
@@ -204,13 +182,12 @@ class MajFTPFrame(ctk.CTkFrame):
             for var in self.platform_vars.values():
                 var.set(True)
             print('Platforms selectionés: ', self.get_selected_platforms())
-            list_platforms = get_all_platforms_env(path_env=ENV_PATH)
+            list_platforms = get_valid_platforms()
         else:
             for var in self.platform_vars.values():
                 var.set(False)
             print('Platforms selectionés: ', self.get_selected_platforms())
             list_platforms = []
-
         return list_platforms
 
 
@@ -264,8 +241,8 @@ class MajFTPFrame(ctk.CTkFrame):
             selected_fournisseurs = self.get_selected_fournisseurs()
             selected_plateformes = self.get_selected_platforms()
 
-            fichiers_fournisseurs = {k: v for k, v in fichiers_fournisseurs.items() if k in selected_fournisseurs}
-            fichiers_platforms = {k: v for k, v in fichiers_platforms.items() if k in selected_plateformes}
+            fichiers_fournisseurs = {k: v for k, v in load_fournisseurs_config().items() if k in selected_fournisseurs and k in get_valid_fournisseurs()}
+            fichiers_platforms = {k: v for k, v in load_plateformes_config().items() if k in selected_plateformes and k in get_valid_platforms()}
 
             """
             # --------------------- All Fournisseurs / Platforms ----------------------
@@ -436,23 +413,10 @@ class MajFTPFrame(ctk.CTkFrame):
     
     
     def load_ftp_infos(self):
-        data = get_info_ftp_env(ENV_PATH)  # Tu peux aussi spécifier un path .env ici
-        fournisseurs = []
-        plateformes = []
-
-        for nom_entite, infos in data.items():
-            # exemple nom_entite: FOURNISSEUR_A
-            label = f"{nom_entite} : {infos.get('host', 'inconnu')}"
-            if nom_entite.startswith("FOURNISSEUR"):
-                fournisseurs.append(label)
-            elif nom_entite.startswith("PLATFORM"):
-                plateformes.append(label)
-
-        # Nettoie les anciennes entrées si besoin
+        fournisseurs = get_valid_fournisseurs()
+        plateformes = get_valid_platforms()
         for widget in self.fournisseur_list.winfo_children():
             widget.destroy()
         for widget in self.plateform_list.winfo_children():
             widget.destroy()
-
-
         self.populate_list(self.fournisseur_list, fournisseurs, self.plateform_list, plateformes)

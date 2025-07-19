@@ -400,23 +400,68 @@ def get_valid_platforms(timeout=5):
     return valid
 
 import yaml
-HEADER_MAPPINGS_PATH = Path(__file__).resolve().parents[1] / 'config' / 'header_mappings.yaml'
+def get_header_mappings_path():
+    # First try current working directory
+    current_dir = Path.cwd()
+    path = current_dir / 'config' / 'header_mappings.yaml'
+    
+    # If not found, try relative to this script
+    if not path.exists():
+        path = Path(__file__).resolve().parent.parent / 'config' / 'header_mappings.yaml'
+    
+    return path
+
+HEADER_MAPPINGS_PATH = get_header_mappings_path()
 
 ALLOWED_TARGETS = ['nom_reference', 'quantite_stock']
 
 def load_header_mappings():
+    print("\n=== DEBUG: load_header_mappings START ===")
+    print(f"DEBUG: Looking for header mappings at: {HEADER_MAPPINGS_PATH}")
+    print(f"DEBUG: Current working directory: {os.getcwd()}")
+    print(f"DEBUG: File exists: {HEADER_MAPPINGS_PATH.exists()}")
+    print(f"DEBUG: File is absolute path: {HEADER_MAPPINGS_PATH.is_absolute()}")
+    print(f"DEBUG: Parent directory exists: {HEADER_MAPPINGS_PATH.parent.exists()}")
+    
     if not HEADER_MAPPINGS_PATH.exists():
+        print("DEBUG: header_mappings.yaml file not found!")
         return {}
-    with open(HEADER_MAPPINGS_PATH, 'r', encoding='utf-8') as f:
-        return yaml.safe_load(f) or {}
+        
+    try:
+        with open(HEADER_MAPPINGS_PATH, 'r', encoding='utf-8') as f:
+            content = f.read()
+            print(f"DEBUG: Raw file content (first 100 chars): {content[:100]}")
+            data = yaml.safe_load(content) or {}
+            print(f"DEBUG: Loaded mappings keys: {list(data.keys())}")
+            return data
+    except Exception as e:
+        print(f"DEBUG: Error loading mappings: {str(e)}")
+        return {}
+    finally:
+        print("=== DEBUG: load_header_mappings END ===\n")
 
 def save_header_mappings(mappings):
     with open(HEADER_MAPPINGS_PATH, 'w', encoding='utf-8') as f:
         yaml.safe_dump(mappings, f, allow_unicode=True)
 
 def get_entity_mappings(entity):
+    print("\n=== DEBUG: get_entity_mappings START ===")
+    print(f"DEBUG: Working directory: {os.getcwd()}")
+    print(f"DEBUG: utils.py location: {__file__}")
+    print(f"DEBUG: Mappings file location: {HEADER_MAPPINGS_PATH}")
     mappings = load_header_mappings()
-    return mappings.get(entity, [])
+    if not entity:
+        print("DEBUG: Entity is empty!")
+        return []
+    print(f"DEBUG: Looking for mappings for entity: '{entity}'")
+    print(f"DEBUG: Available mapping keys: {list(mappings.keys())}")
+    print(f"DEBUG: Type of entity: {type(entity)}")
+    print(f"DEBUG: Length of entity: {len(entity)}")
+    print(f"DEBUG: Entity bytes: {entity.encode()}")
+    result = mappings.get(entity, [])
+    print(f"DEBUG: Found mappings: {result}")
+    print("=== DEBUG: get_entity_mappings END ===\n")
+    return result
 
 def set_entity_mappings(entity, mapping_list):
     mappings = load_header_mappings()

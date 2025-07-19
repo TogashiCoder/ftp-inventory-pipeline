@@ -3,6 +3,7 @@ import yaml
 import customtkinter as ctk
 from tkinter import messagebox
 from pathlib import Path
+from utils import get_entity_mappings
 
 CONFIG_PATH = Path(__file__).resolve().parents[1] / 'config' / 'plateformes_connexions.yaml'
 
@@ -47,6 +48,10 @@ class PlateformFrame(ctk.CTkFrame):
         self.del_btn = ctk.CTkButton(btn_frame, text="🗑️ Supprimer", command=self.remove_plateform, state="disabled")
         self.test_btn = ctk.CTkButton(btn_frame, text="🔌 Tester Connexion", command=self.test_connexion, state="disabled")
         self.mapping_btn = ctk.CTkButton(btn_frame, text="🗂️ Gérer les mappings de colonnes", command=self.open_mapping_modal, state="disabled")
+        
+        # Mapping display frame
+        self.mapping_display_frame = ctk.CTkFrame(self)
+        self.mapping_display_frame.pack(fill="x", padx=10, pady=(0, 5))
         self.add_btn.pack(side="left", padx=5)
         self.edit_btn.pack(side="left", padx=5)
         self.del_btn.pack(side="left", padx=5)
@@ -88,6 +93,33 @@ class PlateformFrame(ctk.CTkFrame):
         self.mapping_btn.configure(state="disabled")
         self.status_bar.configure(text="Sélectionnez une plateforme pour modifier, supprimer ou tester.", text_color="#888")
         self.add_btn.focus_set()
+        self.refresh_mapping_display()
+
+    def refresh_mapping_display(self):
+        for widget in self.mapping_display_frame.winfo_children():
+            widget.destroy()
+        if not self.selected_plateform:
+            ctk.CTkLabel(self.mapping_display_frame, text="Aucune plateforme sélectionnée.").pack(anchor="w", padx=5, pady=2)
+            return
+        # Debug: print selected entity and YAML keys
+        mappings_dict = get_entity_mappings.__globals__['load_header_mappings']()
+        print("Selected:", repr(self.selected_plateform))
+        print("YAML keys:", list(mappings_dict.keys()))
+        # Normalize entity name for lookup
+        entity_key = self.selected_plateform.strip()
+        mappings = mappings_dict.get(entity_key, [])
+        if not mappings:
+            ctk.CTkLabel(self.mapping_display_frame, text="Aucun mapping défini pour cette plateforme.").pack(anchor="w", padx=5, pady=2)
+            return
+        header_frame = ctk.CTkFrame(self.mapping_display_frame)
+        header_frame.pack(fill="x")
+        ctk.CTkLabel(header_frame, text="Source", width=200, font=("Segoe UI", 12, "bold")).grid(row=0, column=0, padx=5)
+        ctk.CTkLabel(header_frame, text="Cible", width=200, font=("Segoe UI", 12, "bold")).grid(row=0, column=1, padx=5)
+        for idx, mapping in enumerate(mappings):
+            row_frame = ctk.CTkFrame(self.mapping_display_frame)
+            row_frame.pack(fill="x")
+            ctk.CTkLabel(row_frame, text=mapping.get('source',''), width=200).grid(row=0, column=0, padx=5)
+            ctk.CTkLabel(row_frame, text=mapping.get('target',''), width=200).grid(row=0, column=1, padx=5)
 
     def select_row(self, name, row_widget):
         self.selected_plateform = name
@@ -100,6 +132,7 @@ class PlateformFrame(ctk.CTkFrame):
         self.test_btn.configure(state="normal")
         self.mapping_btn.configure(state="normal")
         self.status_bar.configure(text=f"Plateforme sélectionnée: {name}", text_color="#253d61")
+        self.refresh_mapping_display()
 
     def add_plateform_modal(self):
         self.open_plateform_modal("Ajouter une plateforme")
@@ -267,6 +300,7 @@ class PlateformFrame(ctk.CTkFrame):
                     new_mappings.append({'source': src, 'target': tgt})
             set_entity_mappings(self.selected_plateform, new_mappings)
             modal.destroy()
+            self.refresh_mapping_display()
             messagebox.showinfo("Succès", "Mappings enregistrés.")
         add_btn = ctk.CTkButton(modal, text="➕ Ajouter mapping", command=add_mapping)
         add_btn.pack(pady=5)

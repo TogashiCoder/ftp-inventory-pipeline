@@ -3,6 +3,7 @@ import yaml
 import customtkinter as ctk
 from tkinter import messagebox
 from pathlib import Path
+from utils import get_entity_mappings
 
 CONFIG_PATH = Path(__file__).resolve().parents[1] / 'config' / 'fournisseurs_connexions.yaml'
 
@@ -57,6 +58,9 @@ class FournisseurAdminFrame(ctk.CTkFrame):
         self.status_bar = ctk.CTkLabel(self, text="", font=("Segoe UI", 11), text_color="#888", anchor="w")
         self.status_bar.pack(fill="x", padx=10, pady=(2, 0))
 
+        self.mapping_display_frame = ctk.CTkFrame(self)
+        self.mapping_display_frame.pack(fill="x", padx=10, pady=(0, 5))
+
         # Now safe to call refresh_table
         self.refresh_table()
 
@@ -90,8 +94,31 @@ class FournisseurAdminFrame(ctk.CTkFrame):
         self.test_btn.configure(state="disabled")
         self.mapping_btn.configure(state="disabled")
         self.status_bar.configure(text="Sélectionnez un fournisseur pour modifier, supprimer ou tester.", text_color="#888")
+        self.refresh_mapping_display()
         # Set focus to Add button to remove hover from last row
         self.add_btn.focus_set()
+
+    def refresh_mapping_display(self):
+        for widget in self.mapping_display_frame.winfo_children():
+            widget.destroy()
+        if not self.selected_fournisseur:
+            ctk.CTkLabel(self.mapping_display_frame, text="Aucun fournisseur sélectionné.").pack(anchor="w", padx=5, pady=2)
+            return
+        # Get mappings for the selected fournisseur
+        entity_key = self.selected_fournisseur.strip()
+        mappings = get_entity_mappings(entity_key)
+        if not mappings:
+            ctk.CTkLabel(self.mapping_display_frame, text="Aucun mapping défini pour ce fournisseur.").pack(anchor="w", padx=5, pady=2)
+            return
+        header_frame = ctk.CTkFrame(self.mapping_display_frame)
+        header_frame.pack(fill="x")
+        ctk.CTkLabel(header_frame, text="Source", width=200, font=("Segoe UI", 12, "bold")).grid(row=0, column=0, padx=5)
+        ctk.CTkLabel(header_frame, text="Cible", width=200, font=("Segoe UI", 12, "bold")).grid(row=0, column=1, padx=5)
+        for idx, mapping in enumerate(mappings):
+            row_frame = ctk.CTkFrame(self.mapping_display_frame)
+            row_frame.pack(fill="x")
+            ctk.CTkLabel(row_frame, text=mapping.get('source',''), width=200).grid(row=0, column=0, padx=5)
+            ctk.CTkLabel(row_frame, text=mapping.get('target',''), width=200).grid(row=0, column=1, padx=5)
 
     def select_row(self, name, row_widget):
         self.selected_fournisseur = name
@@ -104,6 +131,7 @@ class FournisseurAdminFrame(ctk.CTkFrame):
         self.test_btn.configure(state="normal")
         self.mapping_btn.configure(state="normal")
         self.status_bar.configure(text=f"Fournisseur sélectionné: {name}", text_color="#253d61")
+        self.refresh_mapping_display()
 
     def add_fournisseur_modal(self):
         self.open_fournisseur_modal("Ajouter un fournisseur")
@@ -273,6 +301,7 @@ class FournisseurAdminFrame(ctk.CTkFrame):
                     new_mappings.append({'source': src, 'target': tgt})
             set_entity_mappings(self.selected_fournisseur, new_mappings)
             modal.destroy()
+            self.refresh_mapping_display()
             messagebox.showinfo("Succès", "Mappings enregistrés.")
         add_btn = ctk.CTkButton(modal, text="➕ Ajouter mapping", command=add_mapping)
         add_btn.pack(pady=5)

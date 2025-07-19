@@ -1,17 +1,3 @@
-# Header mappings for fournisseurs and platforms
-# Only 'nom_reference' and 'quantite_stock' are allowed as target fields
-# Example:
-# FOURNISSEUR_A:
-#   - source: 'CodeArticle'  # column in the supplier file
-#     target: 'nom_reference'
-#   - source: 'Stock'        # column in the supplier file
-#     target: 'quantite_stock'
-# PLATFORM_A:
-#   - source: 'ProductID'
-#     target: 'nom_reference'
-#   - source: 'Qty'
-#     target: 'quantite_stock'
-
 FOURNISSEUR_A:
   - source: "name"
     target: "nom_reference"

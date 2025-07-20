@@ -399,9 +399,10 @@ class MajFTPFrame(ctk.CTkFrame):
     
     
     def load_ftp_infos(self):
-        # TEMP: Show all YAML entries, not just valid FTPs
-        fournisseurs = list(load_fournisseurs_config().keys())
-        plateformes = list(load_plateformes_config().keys())
+        # Show only valid FTP entries (connection test)
+        from utils import get_valid_fournisseurs, get_valid_platforms
+        fournisseurs = get_valid_fournisseurs()
+        plateformes = get_valid_platforms()
         for widget in self.fournisseur_list.winfo_children():
             widget.destroy()
         for widget in self.plateform_list.winfo_children():

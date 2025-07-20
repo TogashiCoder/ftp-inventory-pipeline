@@ -1,7 +1,7 @@
 import os
 import yaml
 import customtkinter as ctk
-from tkinter import messagebox
+from tkinter import messagebox, filedialog
 from pathlib import Path
 from utils import get_entity_mappings
 
@@ -253,11 +253,11 @@ class FournisseurAdminFrame(ctk.CTkFrame):
         if not self.selected_fournisseur:
             messagebox.showinfo("Info", "Sélectionnez un fournisseur pour gérer les mappings.")
             return
-        from utils import get_entity_mappings, set_entity_mappings, ALLOWED_TARGETS
+        from utils import get_entity_mappings, set_entity_mappings, ALLOWED_TARGETS, read_dataset_file
         mappings = get_entity_mappings(self.selected_fournisseur)
         modal = ctk.CTkToplevel(self)
         modal.title(f"Mappings de colonnes pour {self.selected_fournisseur}")
-        modal.geometry("500x350")
+        modal.geometry("600x450")
         modal.grab_set()
         modal.focus()
         modal.resizable(False, False)
@@ -292,6 +292,15 @@ class FournisseurAdminFrame(ctk.CTkFrame):
             if 0 <= idx < len(mappings):
                 mappings.pop(idx)
                 refresh_mapping_table()
+        def validate_mappings_against_file(file_path, new_mappings):
+            try:
+                data = read_dataset_file(file_path)
+                columns = list(data['dataset'].columns)
+                missing = [m['source'] for m in new_mappings if m['source'] and m['source'] not in columns]
+                return missing, columns
+            except Exception as e:
+                messagebox.showerror("Erreur", f"Erreur lors de la lecture du fichier: {e}")
+                return None, None
         def save_mappings():
             new_mappings = []
             for src_entry, tgt_combo, _ in row_widgets:
@@ -299,12 +308,52 @@ class FournisseurAdminFrame(ctk.CTkFrame):
                 tgt = tgt_combo.get().strip()
                 if src and tgt in ALLOWED_TARGETS:
                     new_mappings.append({'source': src, 'target': tgt})
+            if not new_mappings:
+                set_entity_mappings(self.selected_fournisseur, new_mappings)
+                modal.destroy()
+                self.refresh_mapping_display()
+                messagebox.showinfo("Succès", "Mappings enregistrés.")
+                return
+            file_path = filedialog.askopenfilename(title="Sélectionnez un fichier d'exemple pour valider le mapping", filetypes=[("Fichiers supportés", "*.csv *.xlsx *.xls")])
+            if not file_path:
+                messagebox.showwarning("Validation", "Aucun fichier sélectionné. Validation ignorée.")
+                set_entity_mappings(self.selected_fournisseur, new_mappings)
+                modal.destroy()
+                self.refresh_mapping_display()
+                messagebox.showinfo("Succès", "Mappings enregistrés.")
+                return
+            missing, columns = validate_mappings_against_file(file_path, new_mappings)
+            if missing is None:
+                return
+            if missing:
+                messagebox.showwarning("Colonnes manquantes", f"Les colonnes suivantes sont absentes du fichier: {', '.join(missing)}\nCorrigez le mapping ou le fichier.")
+                return
             set_entity_mappings(self.selected_fournisseur, new_mappings)
             modal.destroy()
             self.refresh_mapping_display()
-            messagebox.showinfo("Succès", "Mappings enregistrés.")
+            messagebox.showinfo("Succès", "Mappings enregistrés et validés.")
+        def preview_mapping():
+            file_path = filedialog.askopenfilename(title="Sélectionnez un fichier pour prévisualiser le mapping", filetypes=[("Fichiers supportés", "*.csv *.xlsx *.xls")])
+            if not file_path:
+                return
+            try:
+                data = read_dataset_file(file_path)
+                df = data['dataset']
+                preview_cols = [src_entry.get().strip() for src_entry, _, _ in row_widgets if src_entry.get().strip() in df.columns]
+                preview_df = df[preview_cols].head(10)
+                preview_modal = ctk.CTkToplevel(modal)
+                preview_modal.title("Prévisualisation du mapping")
+                preview_modal.geometry("700x300")
+                text = ctk.CTkTextbox(preview_modal, width=680, height=260)
+                text.pack(padx=10, pady=10)
+                text.insert("end", preview_df.to_string(index=False))
+                text.configure(state="disabled")
+            except Exception as e:
+                messagebox.showerror("Erreur", f"Erreur lors de la prévisualisation: {e}")
         add_btn = ctk.CTkButton(modal, text="➕ Ajouter mapping", command=add_mapping)
         add_btn.pack(pady=5)
+        preview_btn = ctk.CTkButton(modal, text="👁️ Prévisualiser mapping", command=preview_mapping)
+        preview_btn.pack(pady=5)
         save_btn = ctk.CTkButton(modal, text="💾 Enregistrer", command=save_mappings)
         save_btn.pack(pady=5)
         refresh_mapping_table()
